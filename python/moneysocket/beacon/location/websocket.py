@@ -34,6 +34,8 @@ class WebsocketLocation():
                 'port':    self.port,
                 'use_tls': self.use_tls}
 
+    def is_tls(self):
+        return self.use_tls
 
     @staticmethod
     def from_tlv(tlv):

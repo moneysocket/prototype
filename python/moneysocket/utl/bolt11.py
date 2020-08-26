@@ -4,6 +4,8 @@
 import time
 import json
 
+from hashlib import sha256
+
 from binascii import hexlify, unhexlify
 
 from moneysocket.utl.third_party.lightning_payencode.lnaddr import lndecode
@@ -17,9 +19,11 @@ class Bolt11(object):
         https://github.com/lightningnetwork/lightning-rfc/blob/master/11-payment-encoding.md
     """
 
+    @staticmethod
     def tags_by_name(name, tags):
         return [t[1] for t in tags if t[0] == name]
 
+    @staticmethod
     def dump(bolt11):
         a = lndecode(bolt11)
         print(a.__dict__)
@@ -49,6 +53,7 @@ class Bolt11(object):
         for t in [t for t in a.tags if t[0] not in 'rdfhx']:
             print("UNKNOWN TAG {}: {}".format(t[0], hexlify(t[1])))
 
+    @staticmethod
     def iter_attributes(bolt11):
         a = lndecode(bolt11)
         yield "payee", a.pubkey.serialize().hex()
@@ -73,5 +78,18 @@ class Bolt11(object):
         else:
             yield "expiry", 3600 # default if not specified
 
+    @staticmethod
     def to_dict(bolt11):
         return {key: value for key, value in Bolt11.iter_attributes(bolt11)}
+
+    @staticmethod
+    def get_payment_hash(bolt11):
+        for key, value in Bolt11.iter_attributes(bolt11):
+            if key == "payment_hash":
+                return value
+        return None
+
+    @staticmethod
+    def preimage_to_payment_hash(preimage_str):
+        preimage_bytes = bytes.fromhex(preimage_str)
+        return sha256(preimage_bytes).hexdigest()

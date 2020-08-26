@@ -16,7 +16,7 @@ from twisted.internet import reactor
 from lnd_grpc import Client
 
 from moneysocket.lightning.lnd import Lnd
-from terminus.app import Terminus
+from terminus.app import TerminusApp
 
 
 DEFAULT_LND_DIR = os.path.join(os.path.expanduser("~"), ".lnd")
@@ -56,7 +56,7 @@ c = Client(lnd_dir, macaroon_path, tls_cert_path, network, grpc_host, grpc_port)
 print(c.get_info())
 lnd = Lnd(c)
 
-app = Terminus(config, lnd)
+app = TerminusApp(config, lnd)
 app.run_app()
 
 reactor.run()

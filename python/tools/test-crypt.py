@@ -11,18 +11,18 @@ sys.path.insert(1, os.path.realpath(os.path.pardir))
 
 #print(sys.modules)
 
-from moneysocket.core.message.request.ping import RequestPing
-from moneysocket.core.message.request.rendezvous import RequestRendezvous
-from moneysocket.core.message.notification.pong import NotifyPong
-from moneysocket.core.message.notification.rendezvous import NotifyRendezvous
-from moneysocket.core.message.notification.rendezvous_becoming_ready import (
-    NotifyRendezvousBecomingReady)
+from moneysocket.message.request.ping import RequestPing
+from moneysocket.message.request.rendezvous import RequestRendezvous
+from moneysocket.message.notification.pong import NotifyPong
+from moneysocket.message.notification.rendezvous import NotifyRendezvous
+from moneysocket.message.notification.rendezvous_not_ready import (
+    NotifyRendezvousNotReady)
 
-from moneysocket.core.message.message import MoneysocketMessage
-from moneysocket.core.message.crypt import MoneysocketCrypt
-from moneysocket.core.message.notification.notification import (
+from moneysocket.message.message import MoneysocketMessage
+from moneysocket.socket.crypt import MoneysocketCrypt
+from moneysocket.message.notification.notification import (
     MoneysocketNotification)
-from moneysocket.core.message.request.request import MoneysocketRequest
+from moneysocket.message.request.request import MoneysocketRequest
 
 from moneysocket.beacon.shared_seed import SharedSeed
 
@@ -58,7 +58,7 @@ rr = RequestRendezvous(rid.hex())
 
 rr2 = encode_decode(rr, ss)
 
-nrbr = NotifyRendezvousBecomingReady(rid.hex(), rr2['request_uuid'])
+nrbr = NotifyRendezvousNotReady(rid.hex(), rr2['request_uuid'])
 
 nrbr2 = encode_decode(nrbr, ss)
 

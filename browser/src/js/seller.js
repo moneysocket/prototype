@@ -9,27 +9,27 @@ const WebsocketInterconnect = require(
 const WebsocketLocation = require(
     './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 const BeaconUi = require('./ui/beacon.js').BeaconUi;
-const Role = require('./moneysocket/core/role.js').Role;
+const Role = require('./moneysocket/role/role.js').Role;
 const UpstreamStatusUi = require('./ui/upstream_status.js').UpstreamStatusUi;
 const DownstreamStatusUi = require(
     './ui/downstream_status.js').DownstreamStatusUi;
 
 const RequestProvider = require(
-    "./moneysocket/core/message/request/provider.js").RequestProvider;
+    "./moneysocket/message/request/provider.js").RequestProvider;
 
 const RequestInvoice = require(
-    "./moneysocket/core/message/request/invoice.js").RequestInvoice;
+    "./moneysocket/message/request/invoice.js").RequestInvoice;
 
 const NotifyProvider = require(
-    "./moneysocket/core/message/notification/provider.js").NotifyProvider;
-const NotifyProviderBecomingReady = require(
-    "./moneysocket/core/message/notification/provider_becoming_ready.js"
-    ).NotifyProviderBecomingReady;
+    "./moneysocket/message/notification/provider.js").NotifyProvider;
+const NotifyProviderNotReady = require(
+    "./moneysocket/message/notification/provider_not_ready.js"
+    ).NotifyProviderNotReady;
 
 const NotifyPreimage = require(
-    "./moneysocket/core/message/notification/preimage.js").NotifyPreimage;
+    "./moneysocket/message/notification/preimage.js").NotifyPreimage;
 const NotifyInvoice = require(
-    "./moneysocket/core/message/notification/invoice.js").NotifyInvoice;
+    "./moneysocket/message/notification/invoice.js").NotifyInvoice;
 
 class SellerUi {
     constructor(div) {
@@ -210,8 +210,8 @@ class SellerApp {
         this.handlePong(msg);
     }
 
-    notifyRendezvousBecomingReadyHook(msg, role) {
-        console.log("becoming ready");
+    notifyRendezvousNotReadyHook(msg, role) {
+        console.log("not ready");
         if (role.name == "consumer") {
             this.consumer_ui.switchMode("WAITING_FOR_RENDEZVOUS");
             this.seller_ui.consumerDisconnected();
@@ -224,8 +224,7 @@ class SellerApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.seller_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
 
         } else if (role.name == "provider") {
@@ -273,7 +272,7 @@ class SellerApp {
         }
     }
 
-    notifyProviderBecomingReadyHook(msg, role) {
+    notifyProviderNotReadyHook(msg, role) {
         if (role.name == "consumer") {
             this.consumer_ui.switchMode("WAITING_FOR_PROVIDER");
             this.seller_ui.consumerDisconnected();
@@ -286,8 +285,7 @@ class SellerApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.seller_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
         } else if (role.name == "provider") {
             console.error("unexpected notification");
@@ -362,8 +360,8 @@ class SellerApp {
                 return new NotifyProvider(uuid, req_ref_uuid, false, true,
                                           null);
             }
-            // else notifiy becoming ready
-            return new NotifyProviderBecomingReady(req_ref_uuid);
+            // else notifiy not ready
+            return new NotifyProviderNotReady(req_ref_uuid);
         }
     }
 
@@ -392,8 +390,8 @@ class SellerApp {
             'NOTIFY_RENDEZVOUS': function (msg) {
                 this.notifyRendezvousHook(msg, role);
             }.bind(this),
-            'NOTIFY_RENDEZVOUS_BECOMING_READY': function (msg) {
-                this.notifyRendezvousBecomingReadyHook(msg, role);
+            'NOTIFY_RENDEZVOUS_NOT_READY': function (msg) {
+                this.notifyRendezvousNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_PONG': function (msg) {
                 this.notifyPongHook(msg, role);
@@ -401,8 +399,8 @@ class SellerApp {
             'NOTIFY_PROVIDER': function (msg) {
                 this.notifyProviderHook(msg, role);
             }.bind(this),
-            'NOTIFY_PROVIDER_BECOMING_READY': function (msg) {
-                this.notifyProviderBecomingReadyHook(msg, role);
+            'NOTIFY_PROVIDER_NOT_READY': function (msg) {
+                this.notifyProviderNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_INVOICE': function (msg) {
                 this.notifyInvoiceHook(msg, role);
@@ -475,8 +473,7 @@ class SellerApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.seller_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
 
 

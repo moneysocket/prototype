@@ -4,7 +4,7 @@
 
 const Uuid = require('../utl/uuid.js').Uuid;
 
-const MoneysocketCrypt = require('../core/message/crypt.js').MoneysocketCrypt;
+const MoneysocketCrypt = require('./crypt.js').MoneysocketCrypt;
 
 
 const QUIET_LOG = new Set(["REQUEST_PING",

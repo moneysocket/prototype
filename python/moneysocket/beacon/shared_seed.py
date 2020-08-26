@@ -14,11 +14,22 @@ class SharedSeed():
                            os.urandom(SharedSeed.SHARED_SEED_LEN))
         assert len(self.seed_bytes) == SharedSeed.SHARED_SEED_LEN
 
+    def __hash__(self):
+        return int.from_bytes(self.seed_bytes, byteorder='big')
+
+    def __eq__(self, other):
+        if not other:
+            return False
+        return self.seed_bytes == other.seed_bytes
+
     @staticmethod
     def from_hex_string(hex_str):
         if len(hex_str) != SharedSeed.SHARED_SEED_LEN * 2:
             return None
-        return SharedSeed(seed_bytes=bytes.fromhex(hex_str))
+        try:
+            return SharedSeed(seed_bytes=bytes.fromhex(hex_str))
+        except:
+            return None
 
     def __str__(self):
         return self.seed_bytes.hex()
