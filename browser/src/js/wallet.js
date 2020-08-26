@@ -9,28 +9,28 @@ const WebsocketInterconnect = require(
 const WebsocketLocation = require(
     './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 const BeaconUi = require('./ui/beacon.js').BeaconUi;
-const Role = require('./moneysocket/core/role.js').Role;
+const Role = require('./moneysocket/role/role.js').Role;
 
 const UpstreamStatusUi = require('./ui/upstream_status.js').UpstreamStatusUi;
 const DownstreamStatusUi = require(
     './ui/downstream_status.js').DownstreamStatusUi;
 const RequestProvider = require(
-    "./moneysocket/core/message/request/provider.js").RequestProvider;
+    "./moneysocket/message/request/provider.js").RequestProvider;
 
 const RequestInvoice = require(
-    "./moneysocket/core/message/request/invoice.js").RequestInvoice;
+    "./moneysocket/message/request/invoice.js").RequestInvoice;
 const RequestPay = require(
-    "./moneysocket/core/message/request/pay.js").RequestPay;
+    "./moneysocket/message/request/pay.js").RequestPay;
 
 const NotifyProvider = require(
-    "./moneysocket/core/message/notification/provider.js").NotifyProvider;
-const NotifyProviderBecomingReady = require(
-    "./moneysocket/core/message/notification/provider_becoming_ready.js"
-    ).NotifyProviderBecomingReady;
+    "./moneysocket/message/notification/provider.js").NotifyProvider;
+const NotifyProviderNotReady = require(
+    "./moneysocket/message/notification/provider_not_ready.js"
+    ).NotifyProviderNotReady;
 const NotifyInvoice = require(
-    "./moneysocket/core/message/notification/invoice.js").NotifyInvoice;
+    "./moneysocket/message/notification/invoice.js").NotifyInvoice;
 const NotifyPreimage = require(
-    "./moneysocket/core/message/notification/preimage.js").NotifyPreimage;
+    "./moneysocket/message/notification/preimage.js").NotifyPreimage;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -375,14 +375,11 @@ class WebWalletApp {
         this.handlePong(msg);
     }
 
-    notifyRendezvousBecomingReadyHook(msg, role) {
-        console.log("becoming ready");
+    notifyRendezvousNotReadyHook(msg, role) {
         if (role.name == "provider") {
-            console.log("becoming ready 1");
             this.provider_ui.switchMode("WAITING_FOR_RENDEZVOUS");
             this.wallet_ui.providerDisconnected();
         } else if (role.name == "consumer") {
-            console.log("becoming ready 2");
             this.consumer_ui.switchMode("WAITING_FOR_RENDEZVOUS");
             this.wallet_ui.consumerDisconnected();
             this.stopPinging()
@@ -393,8 +390,7 @@ class WebWalletApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.wallet_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
 
         } else {
@@ -413,7 +409,7 @@ class WebWalletApp {
         }
     }
 
-    notifyProviderBecomingReadyHook(msg, role) {
+    notifyProviderNotReadyHook(msg, role) {
         if (role.name == "provider") {
             console.error("unexpected notification");
             return;
@@ -429,8 +425,7 @@ class WebWalletApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.wallet_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
 
         } else {
@@ -531,7 +526,7 @@ class WebWalletApp {
                 return new NotifyProvider(uuid, req_ref_uuid,
                                           true, true, msats);
             }
-            return new NotifyProviderBecomingReady(req_ref_uuid);
+            return new NotifyProviderNotReady(req_ref_uuid);
         } else if (role.name == "consumer") {
             return NotifyError("no provider here", req_ref_uuid);
         }
@@ -582,8 +577,8 @@ class WebWalletApp {
             'NOTIFY_RENDEZVOUS': function (msg) {
                 this.notifyRendezvousHook(msg, role);
             }.bind(this),
-            'NOTIFY_RENDEZVOUS_BECOMING_READY': function (msg) {
-                this.notifyRendezvousBecomingReadyHook(msg, role);
+            'NOTIFY_RENDEZVOUS_NOT_READY': function (msg) {
+                this.notifyRendezvousNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_PONG': function (msg) {
                 this.notifyPongHook(msg, role);
@@ -591,8 +586,8 @@ class WebWalletApp {
             'NOTIFY_PROVIDER': function (msg) {
                 this.notifyProviderHook(msg, role);
             }.bind(this),
-            'NOTIFY_PROVIDER_BECOMING_READY': function (msg) {
-                this.notifyProviderBecomingReadyHook(msg, role);
+            'NOTIFY_PROVIDER_NOT_READY': function (msg) {
+                this.notifyProviderNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_INVOICE': function (msg) {
                 this.notifyInvoiceHook(msg, role);
@@ -672,8 +667,7 @@ class WebWalletApp {
                 this.provider_role.setState("PROVIDER_SETUP");
                 this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
                 this.wallet_ui.providerDisconnected();
-                this.provider_socket.write(
-                    new NotifyProviderBecomingReady(null));
+                this.provider_socket.write(new NotifyProviderNotReady(null));
             }
         } else {
             console.log("got unknown socket closed");
@@ -741,13 +735,13 @@ window.app = new WebWalletApp();
 
 const SharedSeed = require('./moneysocket/beacon/shared_seed.js').SharedSeed;
 const  RequestRendezvous = require(
-    './moneysocket/core/message/request/rendezvous.js').RequestRendezvous;
+    './moneysocket/message/request/rendezvous.js').RequestRendezvous;
 const  RequestPing = require(
-    './moneysocket/core/message/request/ping.js').RequestPing;
+    './moneysocket/message/request/ping.js').RequestPing;
 const  MessageReceiver = require(
-    './moneysocket/core/message/receiver.js').MessageReceiver;
+    './moneysocket/message/receiver.js').MessageReceiver;
 const  MoneysocketCrypt = require(
-    './moneysocket/core/message/crypt.js').MoneysocketCrypt;
+    './moneysocket/socket/crypt.js').MoneysocketCrypt;
 const BinUtl = require('./moneysocket/utl/bin.js').BinUtl;
 
 function smokeTest() {

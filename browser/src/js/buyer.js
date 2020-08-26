@@ -9,16 +9,15 @@ const WebsocketInterconnect = require(
 const WebsocketLocation = require(
     './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 const BeaconUi = require('./ui/beacon.js').BeaconUi;
-const Role = require('./moneysocket/core/role.js').Role;
+const Role = require('./moneysocket/role/role.js').Role;
 const UpstreamStatusUi = require('./ui/upstream_status.js').UpstreamStatusUi;
 const DownstreamStatusUi = require(
     './ui/downstream_status.js').DownstreamStatusUi;
 const RequestProvider = require(
-    "./moneysocket/core/message/request/provider.js").RequestProvider;
+    "./moneysocket/message/request/provider.js").RequestProvider;
 const RequestInvoice = require(
-    "./moneysocket/core/message/request/invoice.js").RequestInvoice;
-const RequestPay = require(
-    "./moneysocket/core/message/request/pay.js").RequestPay;
+    "./moneysocket/message/request/invoice.js").RequestInvoice;
+const RequestPay = require("./moneysocket/message/request/pay.js").RequestPay;
 
 
 
@@ -362,15 +361,12 @@ class BuyerApp {
         this.handlePong(msg);
     }
 
-    notifyRendezvousBecomingReadyHook(msg, role) {
-        console.log("becoming ready");
+    notifyRendezvousNotReadyHook(msg, role) {
         if (role.name == "seller_consumer") {
-            console.log("becoming ready 1");
             this.seller_consumer_ui.switchMode("WAITING_FOR_RENDEZVOUS");
             this.buyer_ui.sellerConsumerDisconnected();
             this.stopPinging("seller_consumer");
         } else if (role.name == "my_consumer") {
-            console.log("becoming ready 2");
             this.my_consumer_ui.switchMode("WAITING_FOR_RENDEZVOUS");
             this.buyer_ui.myConsumerDisconnected();
             this.stopPinging("my_consumer");
@@ -391,7 +387,7 @@ class BuyerApp {
         }
     }
 
-    notifyProviderBecomingReadyHook(msg, role) {
+    notifyProviderNotReadyHook(msg, role) {
         if (role.name == "seller_consumer") {
             this.seller_consumer_ui.switchMode("WAITING_FOR_PROVIDER");
             this.buyer_ui.sellerConsumerDisconnected();
@@ -458,8 +454,8 @@ class BuyerApp {
             'NOTIFY_RENDEZVOUS': function (msg) {
                 this.notifyRendezvousHook(msg, role);
             }.bind(this),
-            'NOTIFY_RENDEZVOUS_BECOMING_READY': function (msg) {
-                this.notifyRendezvousBecomingReadyHook(msg, role);
+            'NOTIFY_RENDEZVOUS_NOT_READY': function (msg) {
+                this.notifyRendezvousNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_PONG': function (msg) {
                 this.notifyPongHook(msg, role);
@@ -467,8 +463,8 @@ class BuyerApp {
             'NOTIFY_PROVIDER': function (msg) {
                 this.notifyProviderHook(msg, role);
             }.bind(this),
-            'NOTIFY_PROVIDER_BECOMING_READY': function (msg) {
-                this.notifyProviderBecomingReadyHook(msg, role);
+            'NOTIFY_PROVIDER_NOT_READY': function (msg) {
+                this.notifyProviderNotReadyHook(msg, role);
             }.bind(this),
             'NOTIFY_INVOICE': function (msg) {
                 console.log("notify invoice stub");

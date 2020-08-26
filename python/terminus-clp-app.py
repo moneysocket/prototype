@@ -18,7 +18,7 @@ from pyln.client import Plugin
 
 from moneysocket.lightning.clightning import CLightning
 
-from terminus.app import Terminus
+from terminus.app import TerminusApp
 
 plugin = Plugin()
 
@@ -28,7 +28,7 @@ def run_app(wallet_config_file):
     config = ConfigParser()
     config.read(wallet_config_file)
 
-    app = Terminus(config, CLIGHTNING)
+    app = TerminusApp(config, CLIGHTNING)
     app.run_app()
 
 @plugin.init()
@@ -46,7 +46,9 @@ def plugin_thread():
     plugin.run()
     reactor.callFromThread(reactor.stop)
 
-logging.basicConfig(level=logging.DEBUG)
+fmt = '%(asctime)s %(levelname)s: %(filename)s:%(lineno)d: %(message)s'
+datefmt = '%H:%M:%S'
+logging.basicConfig(format=fmt, datefmt=datefmt, level=logging.DEBUG)
 
 reactor.callInThread(plugin_thread)
 reactor.run()

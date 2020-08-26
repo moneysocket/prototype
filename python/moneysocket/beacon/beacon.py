@@ -36,6 +36,9 @@ class MoneysocketBeacon():
     def add_location(self, location):
         self.locations.append(location)
 
+    def get_shared_seed(self):
+        return self.shared_seed
+
     ###########################################################################
 
     def encode_location_list_tlv(self):
@@ -122,6 +125,7 @@ class MoneysocketBeacon():
     ###########################################################################
 
     def to_bech32_str(self):
+        #print("beacon: %s" % self.to_dict())
         encoded_bytes = self.encode_tlvs()
         return Bech32.encode_bytes(encoded_bytes, "moneysocket")
 

@@ -44,38 +44,36 @@ class TerminusTelnetInterface(AppTelnetInterface):
         parser_ls = subparsers.add_parser('ls', help='list summary')
         parser_ls.set_defaults(cmd_func=self.APP.ls)
 
-        parser_new_wallet = subparsers.add_parser("create")
-        parser_new_wallet.set_defaults(cmd_func=self.APP.create)
-        parser_new_wallet.add_argument("msatoshis", type=str,
-                                       help="spending amount in wallet")
+        parser_new_account = subparsers.add_parser("create")
+        parser_new_account.set_defaults(cmd_func=self.APP.create)
+        parser_new_account.add_argument("msatoshis", type=str,
+                                       help="spending amount in account")
 
-        parser_rm_wallet = subparsers.add_parser("rm", help="remove wallet")
-        parser_rm_wallet.set_defaults(cmd_func=self.APP.rm)
-        parser_rm_wallet.add_argument("wallet", type=str,
-                                      help="wallet to remove")
+        parser_rm_account = subparsers.add_parser("rm", help="remove account")
+        parser_rm_account.set_defaults(cmd_func=self.APP.rm)
+        parser_rm_account.add_argument("account", type=str,
+                                      help="account to remove")
 
         parser_connect = subparsers.add_parser('connect',
                                                help='connect to websocket')
         parser_connect.set_defaults(cmd_func=self.APP.connect)
-        parser_connect.add_argument("wallet", type=str,
-                                    help="wallet or service for connection")
+        parser_connect.add_argument("account", type=str,
+                                    help="account or service for connection")
         parser_connect.add_argument("beacon", help="beacon to connect to")
 
         parser_listen = subparsers.add_parser('listen',
                                               help='listen to websocket')
         parser_listen.set_defaults(cmd_func=self.APP.listen)
 
-        default_beacon = self.gen_default_listen_beacon().to_bech32_str()
-        parser_listen.add_argument("wallet", type=str,
-            help="wallet to match with incoming connections")
-        parser_listen.add_argument('-b', '--beacon', type=str,
-                                   default=default_beacon,
-            help="beacon to listen for wallet (default=auto-generated)")
+        parser_listen.add_argument("account", type=str,
+            help="account to match with incoming connections")
+        parser_listen.add_argument('-s', '--shared-seed', type=str,
+            help="shared_seed to listen for account (default=auto-generated)")
 
-        parser_clear = subparsers.add_parser('clearconnection',
-            help='clear connections for wallet')
-        parser_clear.set_defaults(cmd_func=self.APP.clearconnection)
-        parser_clear.add_argument("wallet", type=str, help="wallet to clear")
+        parser_clear = subparsers.add_parser('clear',
+            help='clear connections for account')
+        parser_clear.set_defaults(cmd_func=self.APP.clear)
+        parser_clear.add_argument("account", type=str, help="account to clear")
 
         parser_help = subparsers.add_parser('help', help='get command usage')
         parser_help.set_defaults(cmd_func=self.APP.help)
@@ -83,10 +81,10 @@ class TerminusTelnetInterface(AppTelnetInterface):
                                  help="get usage of command")
 
         self.subparsers = {'ls':               parser_ls,
-                           'new':              parser_new_wallet,
-                           'rm':               parser_rm_wallet,
+                           'new':              parser_new_account,
+                           'rm':               parser_rm_account,
                            'connect':          parser_connect,
                            'listen':           parser_listen,
-                           'clearconnection':  parser_clear,
+                           'clear':            parser_clear,
                            'help':             parser_help}
         return parser

@@ -26,7 +26,11 @@ if not os.path.exists(settings.config):
 config = ConfigParser()
 config.read(settings.config)
 
-logging.basicConfig(level=logging.DEBUG)
+
+
+fmt = '%(asctime)s %(levelname)s: %(filename)s:%(lineno)d: %(message)s'
+datefmt = '%H:%M:%S'
+logging.basicConfig(format=fmt, datefmt=datefmt, level=logging.DEBUG)
 logging.info("using config: %s" % settings.config)
 
 app = Relay(config)
