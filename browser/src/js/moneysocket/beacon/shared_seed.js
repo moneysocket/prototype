@@ -23,6 +23,13 @@ class SharedSeed {
         return new SharedSeed(BinUtl.toByteArray(hex_str));
     }
 
+    isEqual(other) {
+        if (other == null) {
+            return false;
+        }
+        return this.toString() == other.toString();
+    }
+
     toString() {
         return BinUtl.toHexString(this.seed_bytes);
     }

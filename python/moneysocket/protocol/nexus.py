@@ -13,7 +13,6 @@ class ProtocolNexus(object):
 
         self.upward_recv_cb = None
         self.upward_recv_raw_cb = None
-        self.upward_close_cb = None
 
         self.below_nexus.register_upward_recv_cb(self.recv_from_below_cb)
         self.below_nexus.register_upward_recv_raw_cb(

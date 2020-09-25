@@ -222,9 +222,19 @@ gulp.task('quick_watch', function () {
                gulp.series(['clean',
                             'copyMisc',
                             'copyHtml',
-                            'walletQuick',
                             'buyerQuick',
                             'sellerQuick',
+                            'walletQuick',
                             'encodeDecodeQuick',
+                            ]));
+});
+
+
+gulp.task('wallet_watch', function () {
+    gulp.watch("src/**/*" , { ignoreInitial: false },
+               gulp.series(['clean',
+                            'copyMisc',
+                            'copyHtml',
+                            'walletQuick',
                             ]));
 });
