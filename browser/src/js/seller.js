@@ -3,542 +3,223 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const DomUtl = require('./ui/domutl.js').DomUtl;
+const Uuid = require('./moneysocket/utl/uuid.js').Uuid;
+const Bolt11 = require('./moneysocket/utl/bolt11.js').Bolt11;
+
 const Timestamp = require('./moneysocket/utl/timestamp.js').Timestamp;
 const WebsocketInterconnect = require(
     './moneysocket/socket/websocket.js').WebsocketInterconnect;
 const WebsocketLocation = require(
     './moneysocket/beacon/location/websocket.js').WebsocketLocation;
-const BeaconUi = require('./ui/beacon.js').BeaconUi;
-const Role = require('./moneysocket/role/role.js').Role;
-const UpstreamStatusUi = require('./ui/upstream_status.js').UpstreamStatusUi;
-const DownstreamStatusUi = require(
-    './ui/downstream_status.js').DownstreamStatusUi;
 
-const RequestProvider = require(
-    "./moneysocket/message/request/provider.js").RequestProvider;
+const ConnectUi = require('./ui/connect.js').ConnectUi;
+const SellerConnectUi = require('./seller/connect_ui.js').SellerConnectUi;
+const ConsumerStack = require("./moneysocket/stack/consumer.js").ConsumerStack;
+const SellerStack = require("./seller/stack.js").SellerStack;
 
-const RequestInvoice = require(
-    "./moneysocket/message/request/invoice.js").RequestInvoice;
+const SellerUi = require('./seller/ui.js').SellerUi;
 
-const NotifyProvider = require(
-    "./moneysocket/message/notification/provider.js").NotifyProvider;
-const NotifyProviderNotReady = require(
-    "./moneysocket/message/notification/provider_not_ready.js"
-    ).NotifyProviderNotReady;
-
-const NotifyPreimage = require(
-    "./moneysocket/message/notification/preimage.js").NotifyPreimage;
-const NotifyInvoice = require(
-    "./moneysocket/message/notification/invoice.js").NotifyInvoice;
-
-class SellerUi {
-    constructor(div) {
-        this.parent_div = div;
-        this.my_div = null;
-        this.opinion = "Bullish"
-        this.provider_msats = 0;
-    }
-
-    draw(style) {
-        this.my_div = document.createElement("div");
-        this.my_div.setAttribute("class", style);
-
-        this.opinion_div = DomUtl.emptyDiv(this.my_div);
-        this.updateCurrentOpinion(this.opinion);
-
-        DomUtl.drawBr(this.my_div);
-        DomUtl.drawBr(this.my_div);
-
-        DomUtl.drawButton(this.my_div, "Bullish",
-            (function() {this.updateCurrentOpinion("Bullish")}
-            ).bind(this));
-        DomUtl.drawBr(this.my_div);
-        DomUtl.drawButton(this.my_div, "Bearish",
-            (function() {this.updateCurrentOpinion("Bearish")}).bind(this));
-        DomUtl.drawBr(this.my_div);
-        DomUtl.drawButton(this.my_div, "ETH will Scale",
-            (function() {this.updateCurrentOpinion("ETH is Scaling")}
-            ).bind(this));
-        DomUtl.drawBr(this.my_div);
-        DomUtl.drawButton(this.my_div, "(Renege)",
-            (function() {this.updateCurrentOpinion("(Renege)")}).bind(this));
-
-        DomUtl.drawBr(this.my_div);
-        DomUtl.drawBr(this.my_div);
-
-        this.downstream_ui = new DownstreamStatusUi(this.my_div, "Downstream");
-        this.downstream_ui.draw("downstream-status-left");
-
-        this.upstream_ui = new UpstreamStatusUi(this.my_div, "Buyer");
-        this.upstream_ui.draw("upstream-status-right");
-
-        DomUtl.drawBr(this.my_div);
-
-        this.parent_div.appendChild(this.my_div);
-    }
-
-    updateCurrentOpinion(opinion) {
-        this.opinion = opinion;
-        DomUtl.deleteChildren(this.opinion_div);
-        DomUtl.drawText(this.opinion_div, "Current Opinion: ");
-        DomUtl.drawBr(this.opinion_div);
-        DomUtl.drawBigText(this.opinion_div, opinion);
-    }
-
-    getCurrentOpinion() {
-        return this.opinion;
-    }
-
-    updateProviderPing(ping_time) {
-        this.downstream_ui.updatePingTime(ping_time);
-    }
-
-    updateProviderMsats(msats) {
-        this.provider_msats = msats;
-        this.downstream_ui.updateProviderMsats(msats);
-    }
-
-    providerConnected() {
-        this.upstream_ui.updateConnected();
-    }
-    providerDisconnected() {
-        this.upstream_ui.updateDisconnected();
-    }
-
-    consumerConnected() {
-        this.downstream_ui.updateConnected();
-    }
-    consumerDisconnected() {
-        this.downstream_ui.updateDisconnected();
-    }
-}
 
 class SellerApp {
     constructor() {
         this.parent_div = document.getElementById("ui");
-        this.my_div = null;
+        this.my_div = document.createElement("div");
+        this.my_div.setAttribute("class", "bordered");
 
-        this.provider_ui = null;
-        this.consumer_ui = null;
 
-        this.provider_role = null;
-        this.consumer_role = null;
+        this.seller_app_ui = new SellerUi(this.my_div, this);
 
-        this.provider_socket = null;
-        this.consumer_socket = null;
+        this.seller_stack = new SellerStack(this);
+        this.seller_ui = new SellerConnectUi(this.my_div, "Seller App Provider",
+                                             this.seller_stack);
+        this.consumer_stack = new ConsumerStack(this);
+        this.consumer_ui = new ConnectUi(this.my_div, "Seller Wallet Consumer",
+                                         this.consumer_stack);
+        this.provider_uuid = Uuid.uuidv4();
+        this.provider_info = {'ready': false};
 
-        this.ping_interval = null;
-        this.outstanding_pings = {};
+        this.seller_uuid = Uuid.uuidv4();
+        this.store_open = false;
 
-        this.wi = new WebsocketInterconnect(this);
-
-        this.forward_references = {};
+        this.requested_items = {};
+        this.payment_hash_items = {};
     }
 
 
     drawSellerUi() {
-        this.my_div = document.createElement("div");
-        this.my_div.setAttribute("class", "bordered");
         DomUtl.drawTitle(this.my_div, "Opinion Seller App", "h2");
 
-        this.seller_ui = new SellerUi(this.my_div);
-        this.seller_ui.draw("center");
+        this.seller_app_ui.draw("center");
         DomUtl.drawBr(this.my_div);
 
-        this.consumer_ui = new BeaconUi(this.my_div,
-            "Connect to Downstream Moneysocket Provider", this, "consumer");
         this.consumer_ui.draw("left");
-
-        this.provider_ui = new BeaconUi(this.my_div,
-            "Connect to Upstream Opinion Buyer", this, "provider");
-        this.provider_ui.draw("right");
+        this.seller_ui.draw("right");
 
         DomUtl.drawBr(this.my_div);
         DomUtl.drawBr(this.my_div);
-
         this.parent_div.appendChild(this.my_div);
     }
 
 
-    //////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
+    // Seller
+    ///////////////////////////////////////////////////////////////////////////
 
-    sendPing() {
-        //console.log("ping");
-        var msg = this.consumer_role.sendPing();
-        var req_ref_uuid = msg['request_uuid'];
-        this.outstanding_pings[req_ref_uuid] = Timestamp.getNowTimestamp();
+    openStore() {
+        this.store_open = true;
+        this.seller_stack.sellerNowReadyFromApp();
     }
 
-    handlePong(msg) {
-        var req_ref_uuid = msg['request_reference_uuid'];
-        if (! (req_ref_uuid in this.outstanding_pings)) {
-            console.error("got pong with unknown request uuid");
-            return;
-        }
-        var start_time = this.outstanding_pings[req_ref_uuid];
-        var ping_time = (Timestamp.getNowTimestamp() - start_time) * 1000;
-        this.seller_ui.updateProviderPing(Math.round(ping_time));
+    closeStore() {
+        this.store_open = false;
+        this.seller_stack.doDisconnect();
     }
 
-    startPinging() {
-        if (this.ping_interval != null) {
-            return;
-        }
-        console.log("ping starting");
-        this.ping_interval = setInterval(
-            function() {
-                this.sendPing();
-            }.bind(this), 3000);
-        this.sendPing();
-    }
-
-    stopPinging() {
-        if (this.ping_interval == null) {
-            return;
-        }
-        console.log("ping stopping");
-        clearInterval(this.ping_interval);
-        this.ping_interval == null;
-    }
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // Role callbacks:
-    //////////////////////////////////////////////////////////////////////////
-
-    notifyPongHook(msg, role) {
-        this.handlePong(msg);
-    }
-
-    notifyRendezvousNotReadyHook(msg, role) {
-        console.log("not ready");
-        if (role.name == "consumer") {
-            this.consumer_ui.switchMode("WAITING_FOR_RENDEZVOUS");
-            this.seller_ui.consumerDisconnected();
-            this.stopPinging()
-
-
-            if ((this.provider_role != null) &&
-                (this.provider_role.state == "ROLE_OPERATE"))
-            {
-                this.provider_role.setState("PROVIDER_SETUP");
-                this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
-                this.seller_ui.providerDisconnected();
-                this.provider_socket.write(new NotifyProviderNotReady(null));
-            }
-
-        } else if (role.name == "provider") {
-            this.provider_ui.switchMode("WAITING_FOR_RENDEZVOUS");
-            this.seller_ui.providerDisconnected();
+    getItem(item_id) {
+        if (item_id == 'hello') {
+            return "Sincere Hello!!";
+        } else if (item_id == "time") {
+            return Timestamp.getNowTimestamp().toString();
+        } else if (item_id == "outlook") {
+            return this.seller_app_ui.getCurrentOpinion();
         } else {
-            console.log("unknown cb param");
+            return "";
         }
     }
 
-    notifyRendezvousHook(msg, role) {
-        if (role.name == "consumer") {
-            this.consumer_ui.switchMode("REQUESTING_PROVIDER");
-            role.socket.write(new RequestProvider());
-        } else if (role.name == "provider") {
-            this.provider_ui.switchMode("WAITING_FOR_CONSUMER");
+    ///////////////////////////////////////////////////////////////////////////
+    // Consumer Stack Callbacks
+    ///////////////////////////////////////////////////////////////////////////
+
+    consumerOnlineCb() {
+        this.seller_app_ui.consumerOnline();
+    }
+
+    consumerOfflineCb() {
+        this.provider_info = {'ready': false};
+        this.seller_app_ui.consumerOffline();
+        this.seller_stack.doDisconnect();
+    }
+
+    consumerReportProviderInfoCb(provider_info) {
+        var was_ready = this.provider_info['ready'];
+        this.provider_info = {'ready':         true,
+                              'payer':         false,
+                              'payee':         true,
+                              'msats':         null,
+                              'provider_uuid': this.provider_uuid};
+        this.seller_app_ui.balanceUpdateFromDownstream(provider_info['msats']);
+        if (! was_ready) {
+            this.seller_stack.providerNowReadyFromApp();
+        }
+    }
+
+    consumerReportPingCb(msecs) {
+        this.seller_app_ui.pingUpdate(msecs);
+    }
+
+    consumerPostStackEventCb(later_name, status) {
+        this.consumer_ui.postStackEvent(later_name, status);
+    }
+
+    consumerReportBolt11Cb(bolt11, request_reference_uuid) {
+        //console.log("got invoice from consumer: " + request_reference_uuid);
+        //console.log("payment hash: " + Bolt11.getPaymentHash(bolt11));
+        if (! (request_reference_uuid in this.requested_items)) {
+            console.error("got bolt11 not requested?");
         } else {
-            console.log("unknown cb param");
+            this.seller_stack.fulfilRequestOpinionInvoiceCb(
+                bolt11, request_reference_uuid);
+            var payment_hash = Bolt11.getPaymentHash(bolt11);
+            var item_id = this.requested_items[request_reference_uuid];
+            delete this.requested_items[request_reference_uuid];
+            var record = {'item_id': item_id,
+                          'request_reference_uuid': request_reference_uuid};
+            this.payment_hash_items[payment_hash] = record;
         }
     }
 
-    notifyProviderHook(msg, role) {
-        if (role.name == "consumer") {
-            this.consumer_ui.switchMode("CONNECTED");
-            this.seller_ui.consumerConnected();
-            this.seller_ui.updateProviderMsats(msg['msats']);
-            this.startPinging();
+    consumerReportPreimageCb(preimage, request_reference_uuid) {
+        console.log("got preimage from consumer: " + preimage);
+        var payment_hash = Bolt11.preimageToPaymentHash(preimage);
 
-            if ((this.provider_role != null) &&
-                (this.provider_role.state == "PROVIDER_SETUP"))
-            {
-                // TODO - I think there is a race here
-                var uuid = this.provider_role.uuid;
-                var msg = new NotifyProvider(uuid, null, false, true, null);
-                this.provider_role.setState("ROLE_OPERATE");
-                this.provider_socket.write(msg);
-                this.provider_ui.switchMode("CONNECTED");
-                this.seller_ui.providerConnected();
-            }
-        } else if (role.name == "provider") {
-            console.error("unexpected notification");
-            return;
+        if (! (payment_hash in this.payment_hash_items)) {
+            console.log("payment hash not requested?");
         } else {
-            console.log("unknown cb param");
+            var record = this.payment_hash_items[payment_hash];
+            delete this.payment_hash_items[payment_hash];
+            var item_id = record['item_id'];
+            var request_reference_uuid = record['request_reference_uuid'];
+            var opinion = this.getItem(item_id);
+            this.seller_stack.fulfilOpinion(item_id, opinion,
+                                            request_reference_uuid);
         }
     }
 
-    notifyProviderNotReadyHook(msg, role) {
-        if (role.name == "consumer") {
-            this.consumer_ui.switchMode("WAITING_FOR_PROVIDER");
-            this.seller_ui.consumerDisconnected();
-            this.stopPinging()
-            role.setState("PROVIDER_SETUP")
+    ///////////////////////////////////////////////////////////////////////////
+    // Seller Stack Callbacks
+    ///////////////////////////////////////////////////////////////////////////
 
-            if ((this.provider_role != null) &&
-                (this.provider_role.state == "ROLE_OPERATE"))
-            {
-                this.provider_role.setState("PROVIDER_SETUP");
-                this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
-                this.seller_ui.providerDisconnected();
-                this.provider_socket.write(new NotifyProviderNotReady(null));
-            }
-        } else if (role.name == "provider") {
-            console.error("unexpected notification");
-            return;
+    sellerRequestingOpinionInvoiceCb(item_id, request_uuid) {
+        if (item_id == 'hello') {
+            this.consumer_stack.requestInvoice(11111, request_uuid,
+                                               "Hello World");
+        } else if (item_id == 'time') {
+            this.consumer_stack.requestInvoice(22222, request_uuid,
+                                               "Current Timestamp");
+        } else if (item_id == 'outlook') {
+            this.consumer_stack.requestInvoice(33333, request_uuid,
+                                               "Market Outlook");
         } else {
-            console.log("unknown cb param");
+            console.error("unknown item_id");
         }
+        console.log("adding invoice request: " + request_uuid);
+        this.requested_items[request_uuid] = item_id;
     }
 
-    notifyInvoiceHook(msg, role) {
-        var req_ref_uuid = msg['request_reference_uuid'];
-        // if from consumer role, pass along upstream
-        if (role.name == 'consumer') {
-            if (req_ref_uuid in this.forward_references) {
-                var fwd_req_ref_uuid = this.forward_references[req_ref_uuid];
-                delete this.forward_references[req_ref_uuid];
-                if ((this.provider_role == null) ||
-                    (this.provider_role.state != "ROLE_OPERATE"))
-                {
-                    console.error("requesting provider gone offline?");
-                    return
-                }
-                // TODO save payment_hash -> fwd_req_ref_uuid association
-                var fwd_msg = new NotifyInvoice(msg['bolt11'],
-                                                fwd_req_ref_uuid);
-                this.provider_role.socket.write(fwd_msg);
-            } else {
-                console.error("got an invoice not requested?");
-            }
-        } else if (role.name == 'provider') {
-            console.error("unexpected notification");
-            return;
+    sellerRequestingOpinionSellerInfoCb() {
+        // track and provide seller stuff
+        if (this.store_open) {
+            return {'ready': true,
+                    'seller_uuid': this.seller_uuid,
+                    'items': [{'item_id': 'hello',
+                               'name':    'Hello World',
+                               'msats':   11111,
+                              },
+                              {'item_id': 'time',
+                               'name':    'Current Timestamp',
+                               'msats':   22222,
+                              },
+                              {'item_id': 'outlook',
+                               'name':    'Market Outlook',
+                               'msats':   33333,
+                              },
+                            ],
+                   }
         } else {
-            console.log("unknown role");
+            return {'ready': false}
         }
     }
 
-    notifyPreimageHook(msg, role) {
-        if (role.name == "consumer") {
-                // add opinion and pass to provider role
-            if ((this.provider_role == null) ||
-                (this.provider_role.state != "ROLE_OPERATE"))
-            {
-                console.error("buyer not ready?");
-                return
-            }
-            // TODO - track and set request reference uuid?
-            var ext = this.seller_ui.getCurrentOpinion();
-            if (ext != "(Renege)") {
-                var fwd_msg = new NotifyPreimage(msg['preimage'], ext, null);
-                this.provider_role.socket.write(fwd_msg);
-            }
-        } else if (role.name == "provider") {
-            console.error("got a preimage from buyer?");
-        } else {
-            console.log("unknown role");
-        }
+    sellerOnlineCb() {
+        console.log("---");
+        this.seller_app_ui.providerOnline();
     }
 
-    requestProviderHook(msg, role) {
-        if (role.name == "consumer") {
-            return NotifyError("no provider here", req_ref_uuid);
-        } else if (role.name == "provider") {
-            // if consumer is connected, notify ourselves as provider
-            var req_ref_uuid = msg['request_uuid'];
-            if ((this.consumer_role != null) &&
-                (this.consumer_role.state == "ROLE_OPERATE"))
-            {
-                var uuid = this.provider_role.uuid;
-                this.provider_ui.switchMode("CONNECTED");
-                this.seller_ui.providerConnected();
-                return new NotifyProvider(uuid, req_ref_uuid, false, true,
-                                          null);
-            }
-            // else notifiy not ready
-            return new NotifyProviderNotReady(req_ref_uuid);
-        }
+    sellerOfflineCb() {
+        this.seller_app_ui.providerOffline();
     }
 
-    requestInvoiceHook(msg, role) {
-        var req_ref_uuid = msg['request_uuid'];
-        if (role.name == "consumer") {
-            return NotifyError("no provider here", req_ref_uuid);
-        } else if (role.name == "provider") {
-            if ((this.consumer_role == null) ||
-                (this.consumer_role.state != "ROLE_OPERATE"))
-            {
-                console.error("request race?");
-                return
-            }
-            var fwd_msg = new RequestInvoice(msg['msats']);
-            var fwd_req_ref_uuid = fwd_msg['request_uuid'];
-            this.forward_references[fwd_req_ref_uuid] = req_ref_uuid;
-            this.consumer_role.socket.write(fwd_msg);
-            return null;
-        }
+    sellerPostStackEventCb(layer_name, status) {
+        this.seller_ui.postStackEvent(layer_name, status);
     }
+    ///////////////////////////////////////////////////////////////////////////
 
-    registerHooks(role) {
-        console.log("REGISTERING");
-        var hooks = {
-            'NOTIFY_RENDEZVOUS': function (msg) {
-                this.notifyRendezvousHook(msg, role);
-            }.bind(this),
-            'NOTIFY_RENDEZVOUS_NOT_READY': function (msg) {
-                this.notifyRendezvousNotReadyHook(msg, role);
-            }.bind(this),
-            'NOTIFY_PONG': function (msg) {
-                this.notifyPongHook(msg, role);
-            }.bind(this),
-            'NOTIFY_PROVIDER': function (msg) {
-                this.notifyProviderHook(msg, role);
-            }.bind(this),
-            'NOTIFY_PROVIDER_NOT_READY': function (msg) {
-                this.notifyProviderNotReadyHook(msg, role);
-            }.bind(this),
-            'NOTIFY_INVOICE': function (msg) {
-                this.notifyInvoiceHook(msg, role);
-            }.bind(this),
-            'NOTIFY_PREIMAGE': function (msg) {
-                this.notifyPreimageHook(msg, role);
-            }.bind(this),
-            'REQUEST_PROVIDER': function (msg) {
-                return this.requestProviderHook(msg, role);
-            }.bind(this),
-            'REQUEST_INVOICE': function (msg) {
-                return this.requestInvoiceHook(msg, role);
-            }.bind(this),
-            'REQUEST_PAY': function (msg) {
-                // should not get
-                console.log("request pay stub");
-                return null;
-            }.bind(this),
-        }
-        role.registerAppHooks(hooks);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // WebsocketInterconnect callbacks:
-    //////////////////////////////////////////////////////////////////////////
-
-    newSocket(socket, cb_param) {
-        console.log("got new socket: " + socket.toString());
-        console.log("cb_param: " + cb_param);
-
-        var role_info = cb_param;
-        var beacon = role_info['beacon']
-        var rid = beacon.shared_seed.deriveRendezvousId();
-        socket.registerSharedSeed(beacon.shared_seed);
-
-        if (role_info['role'] == "consumer") {
-            this.consumer_socket = socket;
-            this.consumer_ui.switchMode("REQUESTING_RENDEZVOUS");
-            this.consumer_role = new Role("consumer");
-            this.consumer_role.addSocket(socket);
-            this.registerHooks(this.consumer_role);
-            this.consumer_role.startRendezvous(rid);
-        } else if (role_info['role'] == "provider") {
-            this.provider_socket = socket;
-            this.provider_ui.switchMode("REQUESTING_RENDEZVOUS");
-            this.provider_role = new Role("provider");
-            this.provider_role.addSocket(socket);
-            this.registerHooks(this.provider_role);
-            this.provider_role.startRendezvous(rid);
-        } else {
-            console.log("unknown cb param");
-        }
-    }
-
-    socketClose(socket) {
-        console.log("got socket close: " + socket.toString());
-        if ((this.consumer_socket != null) &&
-            (socket.uuid == this.consumer_socket.uuid))
-        {
-            this.consumer_socket = null;
-            this.consumer_role = null;
-            this.consumer_ui.switchMode(this.consumer_ui.return_mode);
-            this.seller_ui.consumerDisconnected();
-            this.stopPinging()
-
-            // degrade the provider
-            if ((this.provider_role != null) &&
-                (this.provider_role.state == "ROLE_OPERATE"))
-            {
-                this.provider_role.setState("PROVIDER_SETUP");
-                this.provider_ui.switchMode("WAITING_FOR_DOWNSTREAM");
-                this.seller_ui.providerDisconnected();
-                this.provider_socket.write(new NotifyProviderNotReady(null));
-            }
-
-
-        } else if ((this.provider_socket != null) &&
-            (socket.uuid == this.provider_socket.uuid))
-        {
-            this.provider_socket = null;
-            this.provider_role = null;
-            this.provider_ui.switchMode(this.provider_ui.return_mode);
-            this.seller_ui.providerDisconnected();
-        } else {
-            console.log("got unknown socket closed");
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // BeaconUI callbacks:
-    //////////////////////////////////////////////////////////////////////////
-
-    connect(beacon, cb_param) {
-        var location = beacon.locations[0];
-        if (cb_param == "consumer") {
-            if (! (location instanceof WebsocketLocation)) {
-                this.consumer_ui.switchMode("CONNECTION_FAILED");
-                return;
-            }
-            var role_info = {'role':   'consumer',
-                             'beacon': beacon};
-            var url = location.toWsUrl();
-            console.log("connect consumer: " + url);
-            this.consumer_ui.switchMode("CONNECTING_WEBSOCKET");
-            this.wi.connect(location, role_info);
-
-        } else if (cb_param == "provider") {
-            if (! (location instanceof WebsocketLocation)) {
-                this.provider_ui.switchMode("CONNECTION_FAILED");
-                return;
-            }
-            var url = location.toWsUrl();
-            var role_info = {'role':   'provider',
-                             'beacon': beacon};
-            console.log("connect provider: " + url);
-            this.provider_ui.switchMode("CONNECTING_WEBSOCKET");
-            this.wi.connect(location, role_info);
-        } else {
-            console.log("unknown cb_param: " + cb_param);
-        }
-    }
-
-    disconnect(cb_param) {
-        if (cb_param == "consumer") {
-            console.log("disconnect consumer");
-            if (this.consumer_socket != null) {
-                this.consumer_socket.close();
-            }
-        } else if (cb_param == "provider") {
-            console.log("disconnect provider");
-            if (this.provider_socket != null) {
-                this.provider_socket.close();
-            }
-        } else {
-            console.log("unknown cb_param: " + cb_param);
-        }
+    getProviderInfo(shared_seed) {
+        return this.provider_info;
     }
 }
+
 
 window.app = new SellerApp();
 

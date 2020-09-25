@@ -19,6 +19,7 @@ class DownstreamStatusUi {
         this.ping_div = null;
         this.balance_div = null;
         this.title = title;
+        this.connected = false;
     }
 
     draw(divclass) {
@@ -37,6 +38,7 @@ class DownstreamStatusUi {
     }
 
     updateDisconnected() {
+        this.connected = false;
         DomUtl.deleteChildren(this.connected_div);
         DomUtl.deleteChildren(this.ping_div);
         DomUtl.deleteChildren(this.balance_div);
@@ -46,6 +48,7 @@ class DownstreamStatusUi {
     }
 
     updateConnected() {
+        this.connected = true;
         DomUtl.deleteChildren(this.connected_div);
         DomUtl.deleteChildren(this.ping_div);
         DomUtl.deleteChildren(this.balance_div);
@@ -61,11 +64,18 @@ class DownstreamStatusUi {
     }
 
     updatePingTime(new_ping_time) {
+        //console.log("ping update: " + new_ping_time);
+        if (! this.connected) {
+            return;
+        }
         this.ping_time = new_ping_time;
         this.updateConnected();
     }
 
     updateProviderMsats(msats) {
+        if (! this.connected) {
+            return;
+        }
         this.provided_msats = msats;
         this.updateConnected();
     }

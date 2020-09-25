@@ -85,6 +85,10 @@ class MoneysocketBeacon {
         this.locations.push(location);
     }
 
+    getSharedSeed() {
+        return this.shared_seed;
+    }
+
     ///////////////////////////////////////////////////////////////////////////
 
     encodeLocationListTlv() {
