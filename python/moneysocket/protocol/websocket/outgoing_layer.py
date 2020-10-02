@@ -52,7 +52,7 @@ class WebsocketConnectionAttempt(MoneysocketConnectionAttempt):
 
 class OutgoingWebsocketLayer(ProtocolLayer):
     def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+        super().__init__(app, above_layer, "OUTGOING_WEBSOCKET")
         self.nexus_by_shared_seed = {}
 
     def announce_nexus_from_below_cb(self, below_nexus):
@@ -63,6 +63,7 @@ class OutgoingWebsocketLayer(ProtocolLayer):
         shared_seed = websocket_nexus.get_shared_seed()
         self.nexus_by_shared_seed[shared_seed] = websocket_nexus
         self.announce_nexus_above_cb(websocket_nexus)
+        self.notify_app_of_status(websocket_nexus, "NEXUS_ANNOUNCED");
 
     ###########################################################################
 

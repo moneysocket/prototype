@@ -42,6 +42,9 @@ class TerminusRelay(object):
     def revoke_nexus_from_below_cb(self, relay_nexus):
         logging.debug("revoked from below")
 
+    def post_layer_stack_event_cb(self, layer_name, nexus, status):
+        pass
+
     ###########################################################################
 
     def get_listen_locations(self):

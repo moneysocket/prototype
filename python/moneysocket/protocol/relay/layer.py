@@ -7,7 +7,7 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 class RelayLayer(ProtocolLayer):
     def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+        super().__init__(app, above_layer, "RELAY")
         self.rendezvous_layer = None
 
     def set_rendezvous_layer(self, rendezvous_layer):

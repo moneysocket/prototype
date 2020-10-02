@@ -68,6 +68,9 @@ class TerminusApp(object):
     def revoke_nexus_from_below_cb(self, terminus_nexus):
         pass
 
+    def post_layer_stack_event_cb(self, layer_name, nexus, status):
+        pass
+
     ###########################################################################
 
     def get_provider_info(self, shared_seed):

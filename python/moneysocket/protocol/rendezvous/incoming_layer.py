@@ -10,7 +10,7 @@ from moneysocket.protocol.rendezvous.incoming_nexus import (
 
 class IncomingRendezvousLayer(ProtocolLayer):
     def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+        super().__init__(app, above_layer, "INCOMING_RENDEZVOUS")
         self.directory = RendezvousDirectory()
 
     def __str__(self):
@@ -24,6 +24,7 @@ class IncomingRendezvousLayer(ProtocolLayer):
     def rendezvous_finished_cb(self, rendezvous_nexus):
         self._track_nexus_announced(rendezvous_nexus)
         self.announce_nexus_above_cb(rendezvous_nexus)
+        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");
 
     def revoke_nexus_from_below_cb(self, below_nexus):
         rendezvous_nexus = self.nexuses[self.nexus_by_below[below_nexus.uuid]]

@@ -9,7 +9,7 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 class OutgoingRendezvousLayer(ProtocolLayer):
     def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+        super().__init__(app, above_layer, "OUTGOING_RENDEZVOUS")
 
     def announce_nexus_from_below_cb(self, below_nexus):
         rendezvous_nexus = OutgoingRendezvousNexus(below_nexus, self)
@@ -22,3 +22,4 @@ class OutgoingRendezvousLayer(ProtocolLayer):
     def rendezvous_finished_cb(self, rendezvous_nexus):
         self._track_nexus_announced(rendezvous_nexus)
         self.announce_nexus_above_cb(rendezvous_nexus)
+        self.notify_app_of_status(rendezvous_nexus, "NEXUS_ANNOUNCED")

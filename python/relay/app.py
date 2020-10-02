@@ -10,7 +10,6 @@ from OpenSSL import SSL
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-from moneysocket.protocol.layer import ProtocolLayer
 from moneysocket.protocol.websocket.incoming_layer import (
     IncomingWebsocketLayer)
 from moneysocket.protocol.rendezvous.incoming_layer import (

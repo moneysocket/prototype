@@ -22,7 +22,7 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 class IncomingWebsocketLayer(ProtocolLayer):
     def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+        super().__init__(app, above_layer, "INCOMING_WEBSOCKET")
         self.listener = None
 
     def announce_nexus_from_below_cb(self, below_nexus):
@@ -30,6 +30,7 @@ class IncomingWebsocketLayer(ProtocolLayer):
         self._track_nexus(websocket_nexus, below_nexus)
         self._track_nexus_announced(websocket_nexus)
         self.announce_nexus_above_cb(websocket_nexus)
+        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");
 
     def stop_listening(self):
         if not self.listener:
