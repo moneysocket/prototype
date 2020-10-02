@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+# Copyright (c) 2020 Jarret Dyrbye
+# Distributed under the MIT software license, see the accompanying
+# file LICENSE or http://www.opensource.org/licenses/mit-license.php
+
+import os
+import sys
+from configparser import ConfigParser
+
+from txjsonrpc.web import jsonrpc
+from twisted.web import server
+from twisted.internet import reactor
+
+from stable.rpc import StabledRpc
+from stable.app import StabledApp
+
+CONFIG_FILE = os.path.join(os.path.expanduser("~"),
+                           ".stabled/stabled.conf")
+
+if not os.path.exists(CONFIG_FILE):
+    sys.exit("*** could not find %s" % CONFIG_FILE)
+
+config = ConfigParser()
+config.read(CONFIG_FILE)
+
+interface = config['Listen']['BindHost']
+port = int(config['Listen']['BindPort'])
+
+app = StabledApp()
+StabledRpc.APP = app
+
+reactor.listenTCP(port, server.Site(StabledRpc()), interface=interface)
+
+# TODO - price feed collector
+
+# TODO - moneysocket consumers
+# TODO - moneysocket providers
+
+reactor.run()

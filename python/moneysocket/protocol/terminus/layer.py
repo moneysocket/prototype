@@ -16,8 +16,8 @@ class TerminusLayer(ProtocolLayer):
     def announce_nexus_from_below_cb(self, below_nexus):
         terminus_nexus = TerminusNexus(below_nexus, self)
         self._track_nexus(terminus_nexus, below_nexus)
+        self.notify_app_of_status(terminus_nexus, "NEXUS_ANNOUNCED")
         self.announce_nexus_above_cb(terminus_nexus)
-        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED")
 
         shared_seed = terminus_nexus.get_shared_seed()
         if shared_seed not in self.nexuses_by_shared_seed:

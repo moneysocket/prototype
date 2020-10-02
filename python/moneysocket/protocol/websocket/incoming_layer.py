@@ -29,8 +29,8 @@ class IncomingWebsocketLayer(ProtocolLayer):
         websocket_nexus = WebsocketNexus(below_nexus, self)
         self._track_nexus(websocket_nexus, below_nexus)
         self._track_nexus_announced(websocket_nexus)
+        self.notify_app_of_status(websocket_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(websocket_nexus)
-        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");
 
     def stop_listening(self):
         if not self.listener:

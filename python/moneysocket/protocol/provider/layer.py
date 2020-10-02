@@ -20,8 +20,8 @@ class ProviderLayer(ProtocolLayer):
 
     def provider_finished_cb(self, provider_nexus):
         self._track_nexus_announced(provider_nexus)
+        self.notify_app_of_status(provider_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(provider_nexus)
-        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");
 
     def revoke_nexus_from_below_cb(self, below_nexus):
         provider_nexus = self.nexuses[self.nexus_by_below[below_nexus.uuid]]

@@ -16,5 +16,5 @@ class IncomingLocalLayer(ProtocolLayer):
         local_nexus = LocalNexus(below_nexus, self)
         self._track_nexus(local_nexus, below_nexus)
         self._track_nexus_announced(local_nexus)
+        self.notify_app_of_status(local_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(local_nexus)
-        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");

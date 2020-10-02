@@ -84,6 +84,7 @@ class MessageCodec():
             except:
                 return None, "message did not decode to utf8"
 
+            print(msg_text)
             msg, err = MoneysocketMessage.from_text(msg_text)
             if err:
                 return None, err

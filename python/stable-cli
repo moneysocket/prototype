@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# Copyright (c) 2020 Jarret Dyrbye
+# Distributed under the MIT software license, see the accompanying
+# file LICENSE or http://www.opensource.org/licenses/mit-license.php
+
+import os
+import sys
+from configparser import ConfigParser
+
+from twisted.internet import reactor
+from txjsonrpc.web.jsonrpc import Proxy
+
+from stable.cmd_parse import StabledCmdParse
+
+CONFIG_FILE = os.path.join(os.path.expanduser("~"),
+                           ".stabled/stabled.conf")
+if not os.path.exists(CONFIG_FILE):
+    sys.exit("*** could not find %s" % CONFIG_FILE)
+
+config = ConfigParser()
+config.read(CONFIG_FILE)
+
+interface = config['Connect']['ExternalHost']
+port = int(config['Connect']['ExternalPort'])
+
+URL = "http://%s:%d" % (interface, port)
+
+def printValue(value):
+    print(value)
+    print("Result: %s" % str(value))
+
+def printError(error):
+    print("*** - %s" % error.getErrorMessage())
+
+def shutDown(data):
+    reactor.stop()
+
+proxy = Proxy(URL)
+
+parser = StabledCmdParse.get_parser()
+if len(sys.argv) == 1:
+    parser.print_help()
+    sys.exit(-1)
+
+parsed = parser.parse_args()
+
+cmd = sys.argv[1]
+d = proxy.callRemote(cmd, sys.argv[2:])
+d.addCallback(printValue).addErrback(printError).addBoth(shutDown)
+reactor.run()

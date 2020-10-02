@@ -62,8 +62,8 @@ class OutgoingWebsocketLayer(ProtocolLayer):
 
         shared_seed = websocket_nexus.get_shared_seed()
         self.nexus_by_shared_seed[shared_seed] = websocket_nexus
-        self.announce_nexus_above_cb(websocket_nexus)
         self.notify_app_of_status(websocket_nexus, "NEXUS_ANNOUNCED");
+        self.announce_nexus_above_cb(websocket_nexus)
 
     ###########################################################################
 

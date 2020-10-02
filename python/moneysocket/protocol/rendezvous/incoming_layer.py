@@ -23,8 +23,8 @@ class IncomingRendezvousLayer(ProtocolLayer):
 
     def rendezvous_finished_cb(self, rendezvous_nexus):
         self._track_nexus_announced(rendezvous_nexus)
+        self.notify_app_of_status(rendezvous_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(rendezvous_nexus)
-        self.notify_app_of_status(nexus, "NEXUS_ANNOUNCED");
 
     def revoke_nexus_from_below_cb(self, below_nexus):
         rendezvous_nexus = self.nexuses[self.nexus_by_below[below_nexus.uuid]]
