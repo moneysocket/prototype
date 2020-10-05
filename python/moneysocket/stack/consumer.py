@@ -7,9 +7,10 @@ from moneysocket.protocol.rendezvous.outgoing_layer import (
     OutgoingRendezvousLayer)
 from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
 from moneysocket.protocol.consumer.layer import ConsumerLayer
+from moneysocket.protocol.transact.consumer_layer import ConsumerTransactLayer
 
 
-class OutgoingConsumerStack(object):
+class ConsumerStack(object):
     def __init__(self, app):
         self.app = app
         assert "consumer_online_cb" in dir(self.app)
@@ -23,11 +24,14 @@ class OutgoingConsumerStack(object):
         self.nexus = None
         self.shared_seed = None
 
-        self.consumer_layer = ConsumerLayer(self, self)
-        self.rendezvous_layer = OutgoingRendezvousLayer(
-            self, self.consumer_layer)
-        self.websocket_layer = OutgoingWebsocketLayer(
-            self, self.rendezvous_layer)
+        self.transact_layer = ConsumerTransactLayer(self, self)
+        self.consumer_layer = ConsumerLayer(self, self.transact_layer)
+
+
+        #self.rendezvous_layer = OutgoingRendezvousLayer(
+        #    self, self.consumer_layer)
+        #self.websocket_layer = OutgoingWebsocketLayer(
+        #    self, self.rendezvous_layer)
 
     ############# transact layer callbacks
 
@@ -71,6 +75,30 @@ class OutgoingConsumerStack(object):
     ######## UI calls these
 
     def do_connect(self, beacon):
+        # implement in subclass
+        pass
+
+    def do_disconnect(self):
+        # implement in subclass
+        pass
+
+    def request_invoice(self, msats, override_request_uuid, description):
+        self.nexus.request_invoice(msats, override_request_uuid, description);
+
+    def request_pay(self, bolt11, override_request_uuid):
+        self.nexus.request_pay(bolt11, override_request_uuid)
+
+
+
+class OutgoingConsumerStack(ConsumerStack):
+    def __init__(self, app):
+        super().__init__(app)
+        self.rendezvous_layer = OutgoingRendezvousLayer(
+            self, self.consumer_layer)
+        self.websocket_layer = OutgoingWebsocketLayer(
+            self, self.rendezvous_layer)
+
+    def do_connect(self, beacon):
         location = beacon.locations[0]
         shared_seed = beacon.get_shared_seed()
         if type(location) != WebsocketLocation:
@@ -80,8 +108,5 @@ class OutgoingConsumerStack(object):
     def do_disconnect(self):
         self.websocket_layer.initiate_close_all()
 
-    def request_invoice(self, msats, override_request_uuid, description):
-        self.nexus.request_invoice(msats, override_request_uuid, description);
 
-    def request_pay(self, bolt11, override_request_uuid):
-        self.nexus.request_pay(bolt11, override_request_uuid)
+# TODO incoming websocket stack

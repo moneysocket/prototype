@@ -2,7 +2,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.stack.outgoing_consumer import OutgoingConsumerStack
+from moneysocket.stack.consumer import OutgoingConsumerStack
 
 from moneysocket.beacon.beacon import MoneysocketBeacon
 
@@ -44,9 +44,11 @@ class StabledApp():
         pass
 
     def consumer_report_provider_info_cb(self, provider_info):
+        print("provider info: %s" % provider_info)
         pass
 
     def consumer_report_ping_cb(self, msecs):
+        print("got ping: %s" % msecs)
         pass
 
     def consumer_post_stack_event_cb(self, layer_name, status):

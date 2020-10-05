@@ -67,7 +67,7 @@ class ConsumerTransactNexus extends ProtocolNexus {
     }
 
     requestPay(bolt11, override_request_uuid) {
-        var rp  = new RequestPay(bolt11);
+        var rp = new RequestPay(bolt11);
         if (override_request_uuid != null) {
             rp.request_uuid = override_request_uuid;
         }
