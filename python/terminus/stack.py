@@ -9,8 +9,11 @@ from moneysocket.protocol.rendezvous.outgoing_layer import (
 from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
 from moneysocket.protocol.local.outgoing_layer import OutgoingLocalLayer
 
+from moneysocket.stack.incoming import IncomingStack
+
 class TerminusStack(object):
-    def __init__(self, app):
+    def __init__(self, config, app):
+        self.config = config
         self.app = app
         self.terminus_layer = TerminusLayer(self, self)
         self.provider_layer = ProviderLayer(self, self.terminus_layer)
@@ -22,9 +25,12 @@ class TerminusStack(object):
         self.outgoing_websocket_layer = OutgoingWebsocketLayer(
             self, self.rendezvous_layer)
         self.local_layer = OutgoingLocalLayer(self, self.rendezvous_layer)
+        self.incoming_stack = IncomingStack(self.config, self.local_layer)
 
     def get_local_layer(self):
         return self.local_layer
+
+    ###########################################################################
 
     def announce_nexus_from_below_cb(self, terminus_nexus):
         self.app.announce_nexus_from_below_cb(terminus_nexus)
@@ -35,6 +41,8 @@ class TerminusStack(object):
     def post_layer_stack_event_cb(self, layer_name, nexus, status):
         self.app.post_layer_stack_event_cb(layer_name, nexus, status)
 
+    ###########################################################################
+
     def get_provider_info(self, shared_seed):
         return self.app.get_provider_info(shared_seed)
 
@@ -44,8 +52,26 @@ class TerminusStack(object):
     def terminus_request_invoice(self, shared_seed, msats):
         self.app.terminus_request_invoice(shared_seed, msats)
 
+    ###########################################################################
+
     def connect(self, location, shared_seed):
         return self.outgoing_websocket_layer.connect(location, shared_seed)
 
     def disconnect(self, shared_seed):
         self.outgoing_websocket_layer.disconnect(shared_seed)
+
+    ###########################################################################
+
+    def local_connect(self, shared_seed):
+        self.local_layer.connect(shared_seed)
+
+    def local_disconnect(self, shared_seed):
+        self.local_layer_disconnect(shared_seed)
+
+    ###########################################################################
+
+    def listen(self):
+        self.incoming_stack.listen()
+
+    def get_listen_locations(self):
+        return self.incoming_stack.get_listen_locations()

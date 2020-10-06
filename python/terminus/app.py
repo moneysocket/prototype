@@ -31,9 +31,7 @@ class TerminusApp(object):
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
 
         self.directory = TerminusDirectory()
-        self.terminus_stack = TerminusStack(self)
-        self.local_layer = self.terminus_stack.get_local_layer()
-        self.incoming_stack = IncomingStack(self.config, self.local_layer)
+        self.terminus_stack = TerminusStack(self.config, self)
 
         TerminusTelnetInterface.APP = self
 
@@ -124,7 +122,7 @@ class TerminusApp(object):
     ##########################################################################
 
     def _iter_ls_lines(self):
-        locations = self.incoming_stack.get_listen_locations()
+        locations = self.terminus_stack.get_listen_locations()
         accounts = self.directory.get_account_list()
         yield "ACCOUNTS:"
         if len(accounts) == 0:
@@ -238,11 +236,11 @@ class TerminusApp(object):
             shared_seed = beacon.shared_seed
 
         # generate new beacon
-        # location is the incoming_stack's incoming websocket
-        beacon.locations = self.incoming_stack.get_listen_locations()
+        # location is the terminus_stack's incoming websocket
+        beacon.locations = self.terminus_stack.get_listen_locations()
         account.add_shared_seed(shared_seed)
-        # register shared seed with local incoming_stack
-        self.local_layer.connect(shared_seed)
+        # register shared seed with local listener
+        self.local_connect(shared_seed)
         self.directory.reindex_account(account)
         return "listening: %s to %s" % (name, beacon)
 
@@ -265,7 +263,7 @@ class TerminusApp(object):
 
         # deregister from local layer
         for shared_seed in account.get_shared_seeds():
-            self.local_layer.disconnect(shared_seed)
+            self.terminus_layer.local_disconnect(shared_seed)
             account.remove_shared_seed(shared_seed)
         self.directory.reindex_account(account)
         return "cleared connections for %s" % (args.account)
@@ -290,7 +288,7 @@ class TerminusApp(object):
                                                                  shared_seed)
                 account.add_connection_attempt(beacon, connection_attempt)
             for shared_seed in account.get_shared_seeds():
-                self.local_layer.connect(shared_seed)
+                self.terminus_layer.local_connect(shared_seed)
 
     ##########################################################################
 
@@ -316,7 +314,7 @@ class TerminusApp(object):
         TerminusTelnetInterface.run_interface(self.config)
         self.load_persisted()
 
-        self.incoming_stack.listen()
+        self.terminus_stack.listen()
 
         self.connect_loop = LoopingCall(self.retry_connections)
         self.connect_loop.start(5, now=False)
