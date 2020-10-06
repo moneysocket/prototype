@@ -15,7 +15,7 @@ from moneysocket.protocol.local.incoming_layer import IncomingLocalLayer
 from moneysocket.beacon.location.websocket import WebsocketLocation
 
 
-class TerminusRelay(object):
+class IncomingStack(object):
     def __init__(self, config, outgoing_local_layer):
         self.config = config
         self.outgoing_local_layer = outgoing_local_layer

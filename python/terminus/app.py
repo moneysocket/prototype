@@ -20,11 +20,11 @@ from moneysocket.utl.bolt11 import Bolt11
 
 from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
+from moneysocket.stack.incoming import IncomingStack
 
 from terminus.telnet import TerminusTelnetInterface
 from terminus.account import Account
 from terminus.account_db import AccountDb
-from terminus.relay import TerminusRelay
 from terminus.directory import TerminusDirectory
 
 
@@ -42,14 +42,14 @@ class TerminusApp(object):
         self.rendezvous_layer = OutgoingRendezvousLayer(
             self, self.provider_layer)
         # two ways to make a connection: 1) via incoming websocket (that comes
-        # through the relay and pass via the local layer) and 2) via outgoing
-        # websocket connections we initiate.
+        # through the incoming stack and pass via the local layer) and
+        # 2) via outgoing websocket connections we initiate.
         self.outgoing_websocket_layer = OutgoingWebsocketLayer(
             self, self.rendezvous_layer)
         self.local_layer = OutgoingLocalLayer(self, self.rendezvous_layer)
-        # relay provides the counterpart for the outgoing local layer to
-        # connect to and also the incoming websocket layer
-        self.relay = TerminusRelay(self.config, self.local_layer)
+
+        self.incoming_stack = IncomingStack(self.config, self.local_layer)
+
         TerminusTelnetInterface.APP = self
 
         self.connect_loop = None
@@ -139,7 +139,7 @@ class TerminusApp(object):
     ##########################################################################
 
     def _iter_ls_lines(self):
-        locations = self.relay.get_listen_locations()
+        locations = self.incoming_stack.get_listen_locations()
         accounts = self.directory.get_account_list()
         yield "ACCOUNTS:"
         if len(accounts) == 0:
@@ -254,10 +254,10 @@ class TerminusApp(object):
             shared_seed = beacon.shared_seed
 
         # generate new beacon
-        # location is the relay's incoming websocket
-        beacon.locations = self.relay.get_listen_locations()
+        # location is the incoming_stack's incoming websocket
+        beacon.locations = self.incoming_stack.get_listen_locations()
         account.add_shared_seed(shared_seed)
-        # register shared seed with local relay
+        # register shared seed with local incoming_stack
         self.local_layer.connect(shared_seed)
         self.directory.reindex_account(account)
         return "listening: %s to %s" % (name, beacon)
@@ -332,7 +332,7 @@ class TerminusApp(object):
         TerminusTelnetInterface.run_interface(self.config)
         self.load_persisted()
 
-        self.relay.listen()
+        self.incoming_stack.listen()
 
         self.connect_loop = LoopingCall(self.retry_connections)
         self.connect_loop.start(5, now=False)
