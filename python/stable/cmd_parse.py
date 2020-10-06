@@ -14,9 +14,10 @@ class StabledCmdParse():
                                            description='valid app commands',
                                            help='app commands')
 
-        parser_ls = subparsers.add_parser('ls', help='list summary')
+        parser_getinfo = subparsers.add_parser('getinfo',
+                                               help='output daemon status info')
         if app:
-            parser_ls.set_defaults(cmd_func=app.ls)
+            parser_getinfo.set_defaults(cmd_func=app.getinfo)
 
         parser_connectsource = subparsers.add_parser("connectsource")
         if app:

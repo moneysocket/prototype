@@ -27,7 +27,6 @@ URL = "http://%s:%d" % (interface, port)
 
 def printValue(value):
     print(value)
-    print("Result: %s" % str(value))
 
 def printError(error):
     print("*** - %s" % error.getErrorMessage())

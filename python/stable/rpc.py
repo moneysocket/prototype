@@ -14,8 +14,8 @@ class StabledRpc(jsonrpc.JSONRPC):
         # TODO - handle failed parse natively
         return parsed.cmd_func(parsed)
 
-    def jsonrpc_ls(self, argv):
-        return self.exec_cmd('ls', argv)
+    def jsonrpc_getinfo(self, argv):
+        return self.exec_cmd('getinfo', argv)
 
     def jsonrpc_connectsource(self, argv):
         return self.exec_cmd('connectsource', argv)
