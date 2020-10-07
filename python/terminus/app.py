@@ -7,6 +7,9 @@ import logging
 import argparse
 from configparser import ConfigParser
 
+from txjsonrpc.web import jsonrpc
+from twisted.web import server
+from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
 from moneysocket.utl.bolt11 import Bolt11
@@ -15,7 +18,7 @@ from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
 from moneysocket.stack.incoming import IncomingStack
 
-from terminus.telnet import TerminusTelnetInterface
+from terminus.rpc import TerminusRpc
 from terminus.account import Account
 from terminus.account_db import AccountDb
 from terminus.directory import TerminusDirectory
@@ -33,13 +36,10 @@ class TerminusApp(object):
         self.directory = TerminusDirectory()
         self.terminus_stack = TerminusStack(self.config, self)
 
-        TerminusTelnetInterface.APP = self
+        TerminusRpc.APP = self
 
         self.connect_loop = None
         self.prune_loop = None
-
-    def set_telnet_interface(self, telnet_interface):
-        self.telnet_interface = telnet_interface
 
     ###########################################################################
 
@@ -270,13 +270,6 @@ class TerminusApp(object):
 
     ##########################################################################
 
-    def help(self, args):
-        if args.cmd not in self.telnet_interface.subparsers.keys():
-            return "*** unknown cmd: %s" % args.cmd
-        return self.telnet_interface.subparsers[args.cmd].format_usage()
-
-    ##########################################################################
-
     def load_persisted(self):
         for account in Account.iter_persisted_accounts():
             self.directory.add_account(account)
@@ -311,7 +304,12 @@ class TerminusApp(object):
     ##########################################################################
 
     def run_app(self):
-        TerminusTelnetInterface.run_interface(self.config)
+        rpc_interface = self.config['Rpc']['BindHost']
+        rpc_port = int(self.config['Rpc']['BindPort'])
+        logging.info("listening on %s:%d" % (rpc_interface, rpc_port))
+        reactor.listenTCP(rpc_port, server.Site(TerminusRpc()),
+                          interface=rpc_interface)
+
         self.load_persisted()
 
         self.terminus_stack.listen()
