@@ -23,13 +23,15 @@ if not os.path.exists(CONFIG_FILE):
 config = ConfigParser()
 config.read(CONFIG_FILE)
 
-interface = config['Listen']['BindHost']
-port = int(config['Listen']['BindPort'])
+rpc_interface = config['Rpc']['BindHost']
+rpc_port = int(config['Rpc']['BindPort'])
 
-app = StabledApp()
+app = StabledApp(config)
 StabledRpc.APP = app
 
-reactor.listenTCP(port, server.Site(StabledRpc()), interface=interface)
+app.run()
+
+reactor.listenTCP(rpc_port, server.Site(StabledRpc()), interface=rpc_interface)
 
 # TODO - price feed collector
 

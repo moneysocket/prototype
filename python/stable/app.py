@@ -3,7 +3,8 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.stack.consumer import OutgoingConsumerStack
-
+from moneysocket.stack.bidirectional_provider import (
+    BidirectionalProviderStack)
 from moneysocket.beacon.beacon import MoneysocketBeacon
 
 
@@ -42,8 +43,9 @@ class StabledAccounting():
 
 
 class StabledApp():
-    def __init__(self):
-        self.outgoing_consumer_stack = OutgoingConsumerStack(self)
+    def __init__(self, config):
+        self.consumer_stack = OutgoingConsumerStack(self)
+        self.provider_stack = BidirectionalProviderStack(config, self)
         self.accounting = StabledAccounting()
         self.sources = {}
 
@@ -60,7 +62,7 @@ class StabledApp():
         beacon, err = MoneysocketBeacon.from_bech32_str(parsed.beacon)
         if err:
             return err
-        self.outgoing_consumer_stack.do_connect(beacon)
+        self.consumer_stack.do_connect(beacon)
         return None
 
     def disconnectsource(self, parsed):
@@ -105,3 +107,10 @@ class StabledApp():
     def consumer_report_preimage_cb(self, nexus, preimage,
                                     request_reference_uuid):
         pass
+
+    ###########################################################################
+    # run
+    ###########################################################################
+
+    def run(self):
+        self.provider_stack.listen()

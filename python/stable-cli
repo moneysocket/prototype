@@ -20,10 +20,10 @@ if not os.path.exists(CONFIG_FILE):
 config = ConfigParser()
 config.read(CONFIG_FILE)
 
-interface = config['Connect']['ExternalHost']
-port = int(config['Connect']['ExternalPort'])
+rpc_interface = config['Rpc']['ExternalHost']
+rpc_port = int(config['Rpc']['ExternalPort'])
 
-URL = "http://%s:%d" % (interface, port)
+URL = "http://%s:%d" % (rpc_interface, rpc_port)
 
 def printValue(value):
     print(value)
