@@ -21,8 +21,8 @@ from moneysocket.protocol.layer import ProtocolLayer
 ###############################################################################
 
 class IncomingWebsocketLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer, "INCOMING_WEBSOCKET")
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "INCOMING_WEBSOCKET")
         self.listener = None
 
     def announce_nexus_from_below_cb(self, below_nexus):

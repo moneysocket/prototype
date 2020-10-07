@@ -6,10 +6,10 @@ from moneysocket.protocol.transact.consumer_nexus import ConsumerTransactNexus
 
 
 class ConsumerTransactLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer, "CONSUMER_TRANSACT")
-        assert "notify_preimage_cb" in dir(app)
-        assert "notify_invoice_cb" in dir(app)
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "CONSUMER_TRANSACT")
+        assert "notify_preimage_cb" in dir(stack)
+        assert "notify_invoice_cb" in dir(stack)
 
     def announce_nexus_from_below_cb(self, below_nexus):
         consumer_transact_nexus = ConsumerTransactNexus(below_nexus, self)
@@ -20,12 +20,12 @@ class ConsumerTransactLayer(ProtocolLayer):
 
     def notify_invoice_cb(self, consumer_transact_nexus, bolt11,
                           request_reference_uuid):
-        self.app.notify_invoice_cb(consumer_transact_nexus, bolt11,
-                                   request_reference_uuid)
+        self.stack.notify_invoice_cb(consumer_transact_nexus, bolt11,
+                                     request_reference_uuid)
 
     def notify_preimage_cb(self, consumer_transact_nexus, preimage,
                            request_reference_uuid):
-        self.app.notify_preimage_cb(consumer_transact_nexus, preimage,
-                                    request_reference_uuid)
+        self.stack.notify_preimage_cb(consumer_transact_nexus, preimage,
+                                      request_reference_uuid)
 
 

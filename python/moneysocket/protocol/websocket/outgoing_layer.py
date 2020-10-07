@@ -51,8 +51,8 @@ class WebsocketConnectionAttempt(MoneysocketConnectionAttempt):
 ###############################################################################
 
 class OutgoingWebsocketLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer, "OUTGOING_WEBSOCKET")
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "OUTGOING_WEBSOCKET")
         self.nexus_by_shared_seed = {}
 
     def announce_nexus_from_below_cb(self, below_nexus):

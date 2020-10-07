@@ -8,8 +8,8 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 
 class OutgoingRendezvousLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer, "OUTGOING_RENDEZVOUS")
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "OUTGOING_RENDEZVOUS")
 
     def announce_nexus_from_below_cb(self, below_nexus):
         rendezvous_nexus = OutgoingRendezvousNexus(below_nexus, self)

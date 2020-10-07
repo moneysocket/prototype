@@ -9,8 +9,8 @@ from moneysocket.protocol.rendezvous.incoming_nexus import (
     IncomingRendezvousNexus)
 
 class IncomingRendezvousLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer, "INCOMING_RENDEZVOUS")
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "INCOMING_RENDEZVOUS")
         self.directory = RendezvousDirectory()
 
     def __str__(self):
