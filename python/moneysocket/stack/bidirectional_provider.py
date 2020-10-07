@@ -3,6 +3,7 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
+from moneysocket.protocol.transact.provider_layer import ProviderTransactLayer
 from moneysocket.protocol.provider.layer import ProviderLayer
 from moneysocket.protocol.rendezvous.outgoing_layer import (
     OutgoingRendezvousLayer)
@@ -16,8 +17,8 @@ class BidirectionalProviderStack(object):
         self.config = config
         self.app = app
 
-        # Provider transact layer
-        self.provider_layer = ProviderLayer(self, self)
+        self.transact_layer = ProviderTransactLayer(self, self)
+        self.provider_layer = ProviderLayer(self, self.transact_layer)
         self.rendezvous_layer = OutgoingRendezvousLayer(
             self, self.provider_layer)
 
@@ -42,3 +43,11 @@ class BidirectionalProviderStack(object):
 
     def listen(self):
         self.incoming_stack.listen()
+
+
+    def got_request_invoice_cb(self, msats, request_uuid):
+        pass
+
+    def got_request_pay_cb(self, bolt11, request_uuid):
+        pass
+

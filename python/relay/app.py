@@ -16,10 +16,12 @@ from moneysocket.protocol.rendezvous.incoming_layer import (
     IncomingRendezvousLayer)
 from moneysocket.protocol.relay.layer import RelayLayer
 
+
 class Relay(object):
     def __init__(self, config):
         self.config = config
 
+        # TODO - this could/should be extracted into a Stack class
         self.relay_layer = RelayLayer(self, self)
         self.rendezvous_layer = IncomingRendezvousLayer(self, self.relay_layer)
         self.websocket_layer = IncomingWebsocketLayer(self,
