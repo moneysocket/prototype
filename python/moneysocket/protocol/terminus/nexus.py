@@ -32,10 +32,10 @@ class TerminusNexus(ProtocolNexus):
         request_reference_uuid = msg['request_uuid']
         shared_seed = below_nexus.get_shared_seed()
         if msg['request_name'] == "REQUEST_PAY":
-            self.layer.app.terminus_request_pay(shared_seed, msg['bolt11'])
+            self.layer.stack.terminus_request_pay(shared_seed, msg['bolt11'])
         else:
             msg['request_name'] == "REQUEST_INVOICE"
-            invoice_info = self.layer.app.terminus_request_invoice(
+            invoice_info = self.layer.stack.terminus_request_invoice(
                 shared_seed, msg['msats'])
             m = NotifyInvoice(invoice_info['bolt11'],
                               request_reference_uuid=request_reference_uuid)
@@ -52,7 +52,7 @@ class TerminusNexus(ProtocolNexus):
         self.send(m)
 
     def notify_provider_info(self, shared_seed):
-        pi = self.layer.app.get_provider_info(shared_seed)
+        pi = self.layer.stack.get_provider_info(shared_seed)
         m = NotifyProvider(pi['provider_uuid'], payer=pi['payer'],
                            payee=pi['payee'], msats=pi['msats'])
         self.send(m)
