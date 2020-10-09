@@ -19,14 +19,45 @@ class StabledCmdParse():
         if app:
             parser_getinfo.set_defaults(cmd_func=app.getinfo)
 
-        parser_connectsource = subparsers.add_parser("connectsource")
+        parser_connectasset = subparsers.add_parser("connectasset",
+            help="connect to asset moneysocket provider")
         if app:
-            parser_connectsource.set_defaults(cmd_func=app.connectsource)
-        parser_connectsource.add_argument("beacon", help="source beacon")
+            parser_connectasset.set_defaults(cmd_func=app.connectasset)
+        parser_connectasset.add_argument("beacon", help="asset beacon")
 
-        parser_disconnectsource = subparsers.add_parser("disconnectsource")
+        parser_disconnectasset = subparsers.add_parser("disconnectasset")
         if app:
-            parser_disconnectsource.set_defaults(cmd_func=app.disconnectsource)
-        parser_disconnectsource.add_argument("provider_uuid",
-                                             help="source beacon")
+            parser_disconnectasset.set_defaults(cmd_func=app.disconnectasset)
+        parser_disconnectasset.add_argument("provider_uuid",
+                                             help="asset beacon")
+
+        parser_create = subparsers.add_parser("createstable")
+        parser_create.add_argument("amount", type=str,
+                                   help="amount of monetary units")
+        parser_create.add_argument("asset", type=str,
+                                   help="asset code")
+        if app:
+            parser_create.set_defaults(cmd_func=app.createstable)
+
+        parser_create = subparsers.add_parser("create")
+        parser_create.add_argument("msatoshis", type=str,
+            help="amount of btc, xxxsats ""is allowed for sats")
+        if app:
+            parser_create.set_defaults(cmd_func=app.create)
+
+
+        parser_connect = subparsers.add_parser('connect',
+                                               help='connect to websocket')
+        parser_connect.add_argument("account", type=str,
+                                    help="account for connection")
+        parser_connect.add_argument("beacon", help="beacon to connect to")
+        if app:
+            parser_connect.set_defaults(cmd_func=app.connect)
+
+        parser_rm = subparsers.add_parser("rm")
+        parser_rm.add_argument("account", type=str,
+                               help="account to remove")
+        if app:
+            parser_rm.set_defaults(cmd_func=app.rm)
+
         return parser

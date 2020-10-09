@@ -143,34 +143,41 @@ class TerminusApp(object):
             i += 1
         return account_name(i)
 
-    def create(self, args):
-        if args.msatoshis.endswith("msat"):
+
+    def arg_to_msats(self, msat_string):
+        if msat_string.endswith("msat"):
             try:
-                msats = int(args.msatoshis[:-4])
+                msats = int(msat_string[:-4])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("msats"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("msats"):
             try:
-                msats = int(args.msatoshis[:-5])
+                msats = int(msat_string[:-5])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("sat"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("sat"):
             try:
-                msats = 1000 * int(args.msatoshis[:-3])
+                msats = 1000 * int(msat_string[:-3])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("sats"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("sats"):
             try:
-                msats = 1000 * int(args.msatoshis[:-4])
+                msats = 1000 * int(msat_string[:-4])
             except:
-                return "*** could not parse msat value"
+                return None, "*** could not parse msat value"
         else:
             try:
-                msats = 1000 * int(args.msatoshis)
+                msats = 1000 * int(msat_string)
             except:
-                return "*** could not parse msat value"
+                return None, "*** could not parse msat value"
         if msats <= 0:
-            return "*** invalid msatoshis value"
+            return None, "*** invalid msatoshis value"
+        return msats, None
+
+    def create(self, args):
+        msats, err = self.arg_to_msats(args.msatoshis)
+        if err:
+            return err
 
         name = self.gen_account_name()
         account = Account(name)

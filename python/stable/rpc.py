@@ -17,11 +17,20 @@ class StabledRpc(jsonrpc.JSONRPC):
     def jsonrpc_getinfo(self, argv):
         return self.exec_cmd('getinfo', argv)
 
-    def jsonrpc_connectsource(self, argv):
-        return self.exec_cmd('connectsource', argv)
+    def jsonrpc_connectasset(self, argv):
+        return self.exec_cmd('connectasset', argv)
 
-    def jsonrpc_disconnectsource(self, argv):
-        return self.exec_cmd('disconnectsource', argv)
+    def jsonrpc_disconnectasset(self, argv):
+        return self.exec_cmd('disconnectasset', argv)
+
+    def jsonrpc_create(self, argv):
+        return self.exec_cmd('create', argv)
+
+    def jsonrpc_createstable(self, argv):
+        return self.exec_cmd('createstable', argv)
+
+    def jsonrpc_connect(self, argv):
+        return self.exec_cmd('connect', argv)
 
     def jsonrpc_rm(self, argv):
         return self.exec_cmd('rm', argv)
