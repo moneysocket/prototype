@@ -27,6 +27,8 @@ class StableDirectory(object):
         return self.accounts[account_name]
 
     def lookup_by_seed(self, shared_seed):
+        if shared_seed not in self.account_by_shared_seed.keys():
+            return None
         return self.account_by_shared_seed[shared_seed]
 
     def lookup_by_payment_hash(self, payment_hash):

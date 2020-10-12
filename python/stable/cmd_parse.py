@@ -54,6 +54,22 @@ class StabledCmdParse():
         if app:
             parser_connect.set_defaults(cmd_func=app.connect)
 
+        parser_listen = subparsers.add_parser('listen',
+                                              help='set account to listen')
+        parser_listen.add_argument("account", type=str,
+            help="account to match with incoming connections")
+        parser_listen.add_argument('-s', '--shared-seed', type=str,
+            help="shared_seed to listen for account (default=auto-generated)")
+        if app:
+            parser_listen.set_defaults(cmd_func=app.listen)
+
+
+        parser_clear = subparsers.add_parser('clear',
+            help='clear connections for account')
+        parser_clear.add_argument("account", type=str, help="account to clear")
+        if app:
+            parser_clear.set_defaults(cmd_func=app.clear)
+
         parser_rm = subparsers.add_parser("rm")
         parser_rm.add_argument("account", type=str,
                                help="account to remove")

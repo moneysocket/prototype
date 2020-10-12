@@ -32,6 +32,12 @@ class StabledRpc(jsonrpc.JSONRPC):
     def jsonrpc_connect(self, argv):
         return self.exec_cmd('connect', argv)
 
+    def jsonrpc_listen(self, argv):
+        return self.exec_cmd('listen', argv)
+
+    def jsonrpc_clear(self, argv):
+        return self.exec_cmd('clear', argv)
+
     def jsonrpc_rm(self, argv):
         return self.exec_cmd('rm', argv)
 

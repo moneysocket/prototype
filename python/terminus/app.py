@@ -193,6 +193,9 @@ class TerminusApp(object):
         if not account:
             return "*** unknown account: %s" % name
 
+        if len(account.get_all_shared_seeds()) > 0:
+            return "*** still has connections: %s" % name
+
         self.directory.remove_account(account)
         account.depersist()
         return "removed: %s" % name
