@@ -50,7 +50,7 @@ class TerminusStack(object):
         self.app.terminus_request_pay(shared_seed, bolt11)
 
     def terminus_request_invoice(self, shared_seed, msats):
-        self.app.terminus_request_invoice(shared_seed, msats)
+        return self.app.terminus_request_invoice(shared_seed, msats)
 
     ###########################################################################
 

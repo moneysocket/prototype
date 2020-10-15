@@ -17,7 +17,6 @@ from moneysocket.message.request.ping import RequestPing
 class ConsumerNexus(ProtocolNexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
-        assert "notify_provider_cb" in dir(layer)
         assert "notify_ping_cb" in dir(layer)
         self.consumer_finished_cb = None;
         self.handshake_finished = False;
@@ -44,8 +43,12 @@ class ConsumerNexus(ProtocolNexus):
         if msg['notification_name'] == "NOTIFY_PROVIDER":
             if not self.handshake_finished:
                 self.handshake_finished = True
+                # nexus is announced to the transact layer
+                # TODO, this message might be better to handle in the transact
+                # layer instead. Refactor might be needed.
                 self.consumer_finished_cb(self)
-            self.layer.notify_provider_cb(self, msg)
+            # pass the message above for the transact layer to process
+            super().recv_from_below_cb(below_nexus, msg)
         elif msg['notification_name'] == "NOTIFY_PROVIDER_NOT_READY":
             logging.info("provider not ready, waiting")
         elif msg['notification_name'] == "NOTIFY_PONG":

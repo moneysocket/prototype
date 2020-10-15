@@ -71,12 +71,12 @@ class ConsumerStack(object):
         # implement in subclass
         pass
 
-    def request_invoice(self, nexus, msats, override_request_uuid, description):
-        nexus.request_invoice(msats, override_request_uuid, description);
+    def request_invoice(self, nexus_uuid, msats, description):
+        return self.transact_layer.request_invoice(nexus_uuid, msats,
+                                                   description)
 
-    def request_pay(self, nexus, bolt11, override_request_uuid):
-        nexus.request_pay(bolt11, override_request_uuid)
-
+    def request_pay(self, nexus_uuid, bolt11):
+         return self.transact_layer.request_pay(nexus_uuid, bolt11)
 
 
 class OutgoingConsumerStack(ConsumerStack):

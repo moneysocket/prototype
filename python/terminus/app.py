@@ -64,6 +64,9 @@ class TerminusApp(object):
     ###########################################################################
 
     def terminus_request_pay(self, shared_seed, bolt11):
+        # TODO - this should be a request-> callback to allow for an
+        # asynchronous call to the daemon.
+
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
 
@@ -83,6 +86,9 @@ class TerminusApp(object):
         self.terminus_layer.notify_preimage(shared_seeds, preimage)
 
     def terminus_request_invoice(self, shared_seed, msats):
+        # TODO - this should be a request-> callback to allow for an
+        # asynchronous call to the daemon.
+
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
 

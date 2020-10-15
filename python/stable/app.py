@@ -2,6 +2,10 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
+import random
+import uuid
+import logging
+
 from moneysocket.stack.consumer import OutgoingConsumerStack
 from moneysocket.stack.bidirectional_provider import (
     BidirectionalProviderStack)
@@ -33,11 +37,27 @@ class StabledAccounting():
         return "\n".join(self.iter_lines())
 
     def add_asset(self, nexus_uuid, provider_info):
+        # TODO transact layer to de-dupe nexuses with the same provider
+        assert nexus_uuid not in self.assets
         self.assets[nexus_uuid] = provider_info
 
-    def revoke_asset(self, nexus_uuid):
-        if nexus_uuid in self.assets:
-            del self.assets[nexus_uuid]
+    def forget_asset(self, nexus_uuid):
+        popped = self.assets.pop(nexus_uuid, None)
+        # TODO - cli command
+        return popped is not None
+
+    def select_paying_nexus_uuid(self, msats):
+        for nexus_uuid, asset in self.assets.items():
+            if msats < provider_info['msats']:
+                return nexus_uuid
+        return None
+
+    def select_receiving_nexus_uuid(self):
+        choices = [nexus_uuid for nexus_uuid, provider_info in
+                   self.assets.items() if provider_info['payee']]
+        if len(choices) == 0:
+            return None
+        return random.choice(choices)
 
 
     def add_liability(self, provider_info):
@@ -55,9 +75,11 @@ class StabledApp():
         self.accounting = StabledAccounting()
         self.assets = {}
 
-
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
         self.directory = StableDirectory()
+
+        self.invoice_requests = {}
+        self.pay_requests = {}
 
     ###########################################################################
 
@@ -236,14 +258,9 @@ class StabledApp():
 
     def consumer_offline_cb(self, nexus):
         print("consumer offline")
-        if nexus.uuid in self.assets:
-            del self.assets[nexus.uuid]
-        self.accounting.revoke_asset(nexus.uuid)
 
     def consumer_report_provider_info_cb(self, nexus, provider_info):
         print("provider info: %s" % provider_info)
-        self.assets[nexus.uuid] = {'nexus':         nexus,
-                                   'provider_info': provider_info}
         self.accounting.add_asset(nexus.uuid, provider_info)
 
     def consumer_report_ping_cb(self, nexus, msecs):
@@ -255,7 +272,17 @@ class StabledApp():
         pass
 
     def consumer_report_bolt11_cb(self, nexus, bolt11, request_reference_uuid):
-        pass
+        if request_reference_uuid not in self.invoice_requests:
+            logging.error("got bolt11 not requested? %s" %
+                          request_reference_uuid)
+            return
+
+        request_info = self.invoice_requests.pop(request_reference_uuid)
+        provider_nexus_uuid = request_info['provider_nexus_uuid']
+        provider_request_uuid = request_info['provider_request_uuid']
+        self.provider_stack.fulfil_request_invoice_cb(
+            provider_nexus_uuid, bolt11, provider_request_uuid)
+
 
     def consumer_report_preimage_cb(self, nexus, preimage,
                                     request_reference_uuid):
@@ -281,6 +308,25 @@ class StabledApp():
             # TODO - error instead?
             return {'ready': False}
         return account.get_provider_info()
+
+    def provider_requesting_invoice_cb(self, nexus, msats, request_uuid):
+        nexus_uuid = self.accounting.select_receiving_nexus_uuid()
+        if not nexus_uuid:
+            return "no account capable of receiving"
+        print("receiving: %s" % nexus_uuid)
+        our_request_uuid, err = self.consumer_stack.request_invoice(nexus_uuid,
+                                                                    msats, "")
+        if err:
+            return err
+        self.invoice_requests[our_request_uuid] = {
+            'provider_nexus_uuid':   nexus.uuid,
+            'provider_request_uuid': request_uuid}
+        return None
+
+
+
+    def provider_requesting_pay_cb(self, shared_seed, bolt11, request_uuid):
+        pass
 
     ###########################################################################
     # run

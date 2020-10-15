@@ -21,6 +21,8 @@ class BidirectionalProviderStack(object):
         assert "provider_post_stack_event_cb" in dir(app)
         assert "provider_online_cb" in dir(app)
         assert "provider_offline_cb" in dir(app)
+        assert "provider_requesting_invoice_cb" in dir(app)
+        assert "provider_requesting_pay_cb" in dir(app)
 
         self.transact_layer = ProviderTransactLayer(self, self)
         self.provider_layer = ProviderLayer(self, self.transact_layer)
@@ -32,13 +34,34 @@ class BidirectionalProviderStack(object):
         self.local_layer = OutgoingLocalLayer(self, self.rendezvous_layer)
         self.incoming_stack = IncomingStack(self.config, self.local_layer)
 
+
     ###########################################################################
 
-    def got_request_invoice_cb(self, msats, request_uuid):
-        pass
+    def got_request_invoice_cb(self, nexus, msats, request_uuid):
+        err = self.app.provider_requesting_invoice_cb(nexus, msats,
+                                                      request_uuid)
+        if err:
+            print("couldn't get invoice: %s" % err)
+            # TODO - send back error
+            return
 
-    def got_request_pay_cb(self, bolt11, request_uuid):
-        pass
+
+    def fulfil_request_invoice_cb(self, nexus_uuid, bolt11,
+                                  request_reference_uuid):
+        self.transact_layer.fulfil_request_invoice(nexus_uuid, bolt11,
+                                                   request_reference_uuid)
+
+    def got_request_pay_cb(self, nexus, bolt11, request_uuid):
+        nexus_uuid = nexus.uuid
+        shared_seed = nexus.get_shared_seed()
+
+        err = self.app.provider_requesting_pay_cb(shared_seed, bolt11,
+                                                  request_uuid)
+        if err:
+            print("couldn't get invoice: %s" % err)
+            # TODO - send back error
+            return
+
 
     ###########################################################################
 
