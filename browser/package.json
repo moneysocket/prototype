@@ -24,7 +24,8 @@
     "vinyl-source-stream": "^2.0.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "quick-watch": "./node_modules/.bin/gulp quick_watch",
+    "start" : "cd htdocs; python3 -m http.server"
   },
   "author": "",
   "license": "ISC"
