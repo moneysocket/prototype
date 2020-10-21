@@ -13,8 +13,8 @@ from moneysocket.protocol.local.nexus import LocalNexus
 
 
 class OutgoingLocalLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "OUTGOING_LOCAL")
         self.incoming_local_layer = None
         self.outgoing_by_shared_seed = {}
         self.incoming_by_shared_seed = {}
@@ -23,6 +23,7 @@ class OutgoingLocalLayer(ProtocolLayer):
         local_nexus = LocalNexus(below_nexus, self)
         self._track_nexus(local_nexus, below_nexus)
         self._track_nexus_announced(local_nexus)
+        self.notify_app_of_status(local_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(local_nexus)
 
     ###########################################################################

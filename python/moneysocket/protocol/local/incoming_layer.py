@@ -9,11 +9,12 @@ from moneysocket.protocol.local.nexus import LocalNexus
 
 
 class IncomingLocalLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "INCOMING_LOCAL")
 
     def announce_nexus_from_below_cb(self, below_nexus):
         local_nexus = LocalNexus(below_nexus, self)
         self._track_nexus(local_nexus, below_nexus)
         self._track_nexus_announced(local_nexus)
+        self.notify_app_of_status(local_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(local_nexus)

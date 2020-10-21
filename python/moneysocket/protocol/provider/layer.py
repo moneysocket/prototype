@@ -7,9 +7,9 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 
 class ProviderLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
-        assert "get_provider_info" in dir(app)
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "PROVIDER")
+        assert "get_provider_info" in dir(stack)
         self.waiting_for_app = {}
 
     def announce_nexus_from_below_cb(self, below_nexus):
@@ -20,6 +20,7 @@ class ProviderLayer(ProtocolLayer):
 
     def provider_finished_cb(self, provider_nexus):
         self._track_nexus_announced(provider_nexus)
+        self.notify_app_of_status(provider_nexus, "NEXUS_ANNOUNCED");
         self.announce_nexus_above_cb(provider_nexus)
 
     def revoke_nexus_from_below_cb(self, below_nexus):

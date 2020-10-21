@@ -15,7 +15,7 @@ from moneysocket.protocol.local.incoming_layer import IncomingLocalLayer
 from moneysocket.beacon.location.websocket import WebsocketLocation
 
 
-class TerminusRelay(object):
+class IncomingStack(object):
     def __init__(self, config, outgoing_local_layer):
         self.config = config
         self.outgoing_local_layer = outgoing_local_layer
@@ -41,6 +41,9 @@ class TerminusRelay(object):
 
     def revoke_nexus_from_below_cb(self, relay_nexus):
         logging.debug("revoked from below")
+
+    def post_layer_stack_event_cb(self, layer_name, nexus, status):
+        pass
 
     ###########################################################################
 

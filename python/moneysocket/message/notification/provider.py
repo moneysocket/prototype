@@ -4,6 +4,7 @@
 
 import string
 import json
+import uuid
 
 from moneysocket.message.notification.notification import (
     MoneysocketNotification)
@@ -40,7 +41,7 @@ class NotifyProvider(MoneysocketNotification):
             return "unknown provider_uuid type"
         try:
             _ = uuid.UUID(msg_dict['provider_uuid'])
-        except:
+        except Exception as e:
             return "invalid provider_uuid"
 
         if type(msg_dict['payee']) != bool:

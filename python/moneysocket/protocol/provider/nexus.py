@@ -34,7 +34,7 @@ class ProviderNexus(ProtocolNexus):
         self.request_reference_uuid = msg['request_uuid']
         if msg['request_name'] == "REQUEST_PROVIDER":
             shared_seed = below_nexus.get_shared_seed()
-            provider_info = self.layer.app.get_provider_info(shared_seed)
+            provider_info = self.layer.stack.get_provider_info(shared_seed)
             if provider_info['ready']:
                 self.notify_provider_ready()
             else:
@@ -58,7 +58,7 @@ class ProviderNexus(ProtocolNexus):
 
     def notify_provider_ready(self):
         shared_seed = self.below_nexus.get_shared_seed()
-        provider_info = self.layer.app.get_provider_info(shared_seed)
+        provider_info = self.layer.stack.get_provider_info(shared_seed)
         assert provider_info['ready']
         provider_uuid = provider_info['provider_uuid']
         payer = provider_info['payer']

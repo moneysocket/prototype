@@ -7,15 +7,16 @@ from moneysocket.protocol.layer import ProtocolLayer
 
 
 class TerminusLayer(ProtocolLayer):
-    def __init__(self, app, above_layer):
-        super().__init__(app, above_layer)
-        assert "terminus_request_invoice" in dir(app)
-        assert "terminus_request_pay" in dir(app)
+    def __init__(self, stack, above_layer):
+        super().__init__(stack, above_layer, "TERMINUS")
+        assert "terminus_request_invoice" in dir(stack)
+        assert "terminus_request_pay" in dir(stack)
         self.nexuses_by_shared_seed = {}
 
     def announce_nexus_from_below_cb(self, below_nexus):
         terminus_nexus = TerminusNexus(below_nexus, self)
         self._track_nexus(terminus_nexus, below_nexus)
+        self.notify_app_of_status(terminus_nexus, "NEXUS_ANNOUNCED")
         self.announce_nexus_above_cb(terminus_nexus)
 
         shared_seed = terminus_nexus.get_shared_seed()

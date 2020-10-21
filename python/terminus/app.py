@@ -7,25 +7,22 @@ import logging
 import argparse
 from configparser import ConfigParser
 
+from txjsonrpc.web import jsonrpc
+from twisted.web import server
+from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
-
-from moneysocket.protocol.terminus.layer import TerminusLayer
-from moneysocket.protocol.provider.layer import ProviderLayer
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.local.outgoing_layer import OutgoingLocalLayer
 
 from moneysocket.utl.bolt11 import Bolt11
 
 from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
+from moneysocket.stack.incoming import IncomingStack
 
-from terminus.telnet import TerminusTelnetInterface
+from terminus.rpc import TerminusRpc
 from terminus.account import Account
 from terminus.account_db import AccountDb
-from terminus.relay import TerminusRelay
 from terminus.directory import TerminusDirectory
+from terminus.stack import TerminusStack
 
 
 class TerminusApp(object):
@@ -37,26 +34,12 @@ class TerminusApp(object):
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
 
         self.directory = TerminusDirectory()
-        self.terminus_layer = TerminusLayer(self, self)
-        self.provider_layer = ProviderLayer(self, self.terminus_layer)
-        self.rendezvous_layer = OutgoingRendezvousLayer(
-            self, self.provider_layer)
-        # two ways to make a connection: 1) via incoming websocket (that comes
-        # through the relay and pass via the local layer) and 2) via outgoing
-        # websocket connections we initiate.
-        self.outgoing_websocket_layer = OutgoingWebsocketLayer(
-            self, self.rendezvous_layer)
-        self.local_layer = OutgoingLocalLayer(self, self.rendezvous_layer)
-        # relay provides the counterpart for the outgoing local layer to
-        # connect to and also the incoming websocket layer
-        self.relay = TerminusRelay(self.config, self.local_layer)
-        TerminusTelnetInterface.APP = self
+        self.terminus_stack = TerminusStack(self.config, self)
+
+        TerminusRpc.APP = self
 
         self.connect_loop = None
         self.prune_loop = None
-
-    def set_telnet_interface(self, telnet_interface):
-        self.telnet_interface = telnet_interface
 
     ###########################################################################
 
@@ -66,6 +49,9 @@ class TerminusApp(object):
         pass
 
     def revoke_nexus_from_below_cb(self, terminus_nexus):
+        pass
+
+    def post_layer_stack_event_cb(self, layer_name, nexus, status):
         pass
 
     ###########################################################################
@@ -78,6 +64,9 @@ class TerminusApp(object):
     ###########################################################################
 
     def terminus_request_pay(self, shared_seed, bolt11):
+        # TODO - this should be a request-> callback to allow for an
+        # asynchronous call to the daemon.
+
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
 
@@ -94,9 +83,12 @@ class TerminusApp(object):
         account.set_msatoshis(new_msats)
 
         shared_seeds = account.get_all_shared_seeds()
-        self.terminus_layer.notify_preimage(shared_seeds, preimage)
+        self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     def terminus_request_invoice(self, shared_seed, msats):
+        # TODO - this should be a request-> callback to allow for an
+        # asynchronous call to the daemon.
+
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
 
@@ -131,12 +123,12 @@ class TerminusApp(object):
         shared_seeds = account.get_all_shared_seeds()
         account.remove_pending(payment_hash)
         account.set_msatoshis(account.get_msatoshis() + msats)
-        self.terminus_layer.notify_preimage(shared_seeds, preimage)
+        self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     ##########################################################################
 
-    def _iter_ls_lines(self):
-        locations = self.relay.get_listen_locations()
+    def _iter_getinfo_lines(self):
+        locations = self.terminus_stack.get_listen_locations()
         accounts = self.directory.get_account_list()
         yield "ACCOUNTS:"
         if len(accounts) == 0:
@@ -144,8 +136,8 @@ class TerminusApp(object):
         for account in accounts:
             yield "%s" % (account.summary_string(locations))
 
-    def ls(self, args):
-        return "\n".join(self._iter_ls_lines())
+    def getinfo(self, args):
+        return "\n".join(self._iter_getinfo_lines())
 
     ##########################################################################
 
@@ -157,34 +149,41 @@ class TerminusApp(object):
             i += 1
         return account_name(i)
 
-    def create(self, args):
-        if args.msatoshis.endswith("msat"):
+
+    def arg_to_msats(self, msat_string):
+        if msat_string.endswith("msat"):
             try:
-                msats = int(args.msatoshis[:-4])
+                msats = int(msat_string[:-4])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("msats"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("msats"):
             try:
-                msats = int(args.msatoshis[:-5])
+                msats = int(msat_string[:-5])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("sat"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("sat"):
             try:
-                msats = 1000 * int(args.msatoshis[:-3])
+                msats = 1000 * int(msat_string[:-3])
             except:
-                return "*** could not parse msat value"
-        elif args.msatoshis.endswith("sats"):
+                return None, "*** could not parse msat value"
+        elif msat_string.endswith("sats"):
             try:
-                msats = 1000 * int(args.msatoshis[:-4])
+                msats = 1000 * int(msat_string[:-4])
             except:
-                return "*** could not parse msat value"
+                return None, "*** could not parse msat value"
         else:
             try:
-                msats = 1000 * int(args.msatoshis)
+                msats = 1000 * int(msat_string)
             except:
-                return "*** could not parse msat value"
+                return None, "*** could not parse msat value"
         if msats <= 0:
-            return "*** invalid msatoshis value"
+            return None, "*** invalid msatoshis value"
+        return msats, None
+
+    def create(self, args):
+        msats, err = self.arg_to_msats(args.msatoshis)
+        if err:
+            return err
 
         name = self.gen_account_name()
         account = Account(name)
@@ -199,6 +198,9 @@ class TerminusApp(object):
         account = self.directory.lookup_by_name(name)
         if not account:
             return "*** unknown account: %s" % name
+
+        if len(account.get_all_shared_seeds()) > 0:
+            return "*** still has connections: %s" % name
 
         self.directory.remove_account(account)
         account.depersist()
@@ -222,8 +224,7 @@ class TerminusApp(object):
             return "*** can't connect to beacon location"
 
         shared_seed = beacon.shared_seed
-        connection_attempt = self.outgoing_websocket_layer.connect(location,
-                                                                   shared_seed)
+        connection_attempt = self.terminus_stack.connect(location, shared_seed)
         account.add_connection_attempt(beacon, connection_attempt)
         account.add_beacon(beacon)
         self.directory.reindex_account(account)
@@ -251,11 +252,11 @@ class TerminusApp(object):
             shared_seed = beacon.shared_seed
 
         # generate new beacon
-        # location is the relay's incoming websocket
-        beacon.locations = self.relay.get_listen_locations()
+        # location is the terminus_stack's incoming websocket
+        beacon.locations = self.terminus_stack.get_listen_locations()
         account.add_shared_seed(shared_seed)
-        # register shared seed with local relay
-        self.local_layer.connect(shared_seed)
+        # register shared seed with local listener
+        self.local_connect(shared_seed)
         self.directory.reindex_account(account)
         return "listening: %s to %s" % (name, beacon)
 
@@ -273,22 +274,15 @@ class TerminusApp(object):
         # initiate close to disconnect
         for beacon in account.get_beacons():
             shared_seed = beacon.get_shared_seed()
-            self.outgoing_websocket_layer.disconnect(shared_seed)
+            self.terminus_stack.disconnect(shared_seed)
             account.remove_beacon(beacon)
 
         # deregister from local layer
         for shared_seed in account.get_shared_seeds():
-            self.local_layer.disconnect(shared_seed)
+            self.terminus_stack.local_disconnect(shared_seed)
             account.remove_shared_seed(shared_seed)
         self.directory.reindex_account(account)
         return "cleared connections for %s" % (args.account)
-
-    ##########################################################################
-
-    def help(self, args):
-        if args.cmd not in self.telnet_interface.subparsers.keys():
-            return "*** unknown cmd: %s" % args.cmd
-        return self.telnet_interface.subparsers[args.cmd].format_usage()
 
     ##########################################################################
 
@@ -299,11 +293,11 @@ class TerminusApp(object):
                 location = beacon.locations[0]
                 assert location.to_dict()['type'] == "WebSocket"
                 shared_seed = beacon.shared_seed
-                connection_attempt = self.outgoing_websocket_layer.connect(
-                    location, shared_seed)
+                connection_attempt = self.terminus_stack.connect(location,
+                                                                 shared_seed)
                 account.add_connection_attempt(beacon, connection_attempt)
             for shared_seed in account.get_shared_seeds():
-                self.local_layer.connect(shared_seed)
+                self.terminus_stack.local_connect(shared_seed)
 
     ##########################################################################
 
@@ -315,8 +309,8 @@ class TerminusApp(object):
                 location = beacon.locations[0]
                 assert location.to_dict()['type'] == "WebSocket"
                 shared_seed = beacon.shared_seed
-                connection_attempt = self.outgoing_websocket_layer.connect(
-                    location, shared_seed)
+                connection_attempt = self.terminus_stack.connect(location,
+                                                                 shared_seed)
                 account.add_connection_attempt(beacon, connection_attempt)
 
     def prune_expired_pending(self):
@@ -326,10 +320,15 @@ class TerminusApp(object):
     ##########################################################################
 
     def run_app(self):
-        TerminusTelnetInterface.run_interface(self.config)
+        rpc_interface = self.config['Rpc']['BindHost']
+        rpc_port = int(self.config['Rpc']['BindPort'])
+        logging.info("listening on %s:%d" % (rpc_interface, rpc_port))
+        reactor.listenTCP(rpc_port, server.Site(TerminusRpc()),
+                          interface=rpc_interface)
+
         self.load_persisted()
 
-        self.relay.listen()
+        self.terminus_stack.listen()
 
         self.connect_loop = LoopingCall(self.retry_connections)
         self.connect_loop.start(5, now=False)

@@ -22,18 +22,18 @@ class ConsumerLayer extends ProtocolLayer {
         consumer_nexus.startHandshake(this.consumerFinishedCb.bind(this));
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
-        var consumer_nexus = this.nexuses[
-            this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
-        consumer_nexus.stopPinging();
-    }
-
     consumerFinishedCb(consumer_nexus) {
         this._trackNexusAnnounced(consumer_nexus);
         this.notifyAppOfStatus(consumer_nexus, "NEXUS_ANNOUNCED");
         this.announceNexusAboveCb(consumer_nexus);
         consumer_nexus.startPinging();
+    }
+
+    revokeNexusFromBelowCb(below_nexus) {
+        var consumer_nexus = this.nexuses[
+            this.nexus_by_below[below_nexus.uuid]];
+        super.revokeNexusFromBelowCb(below_nexus);
+        consumer_nexus.stopPinging();
     }
 
     notifyProviderCb(consumer_nexus, msg) {
