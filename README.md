@@ -31,7 +31,7 @@ cp -r python ~/.lightning/plugins/moneysocket;
 cd ~/.lightning/plugins/moneysocket; 
 rm relay-app.py reload-terminus-clp-app.py terminus-lnd-app.py test-protocol.py
 ```
-(alternatively you may start c-ligthing's `lightningd` service and then run `./python/reload-terminus-clp.app.py` which will copy over just the necessary files )
+(alternatively you may start c-lightning's `lightningd` service and then run `./python/reload-terminus-clp.app.py` which will copy over just the necessary files )
 
 Next, install moneysocket's native dependencies `python3-crypto` and `libsecp256k1-dev`
 
