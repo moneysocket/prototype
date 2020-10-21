@@ -20,7 +20,7 @@ To run the example, you will need:
 
 #### Install moneysocket
 
-In the case of c-lighthing, moneysocket can be installed as a plugin: simply copy the contents of this repo to your **~/.lightning/plugins** directory... 
+In the case of c-lightning, moneysocket can be installed as a plugin: simply copy the contents of this repo to your **~/.lightning/plugins** directory... 
 
 then delete all other .py files except for `terminus-lnd-app.py` 
 
