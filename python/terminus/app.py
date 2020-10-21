@@ -127,7 +127,7 @@ class TerminusApp(object):
 
     ##########################################################################
 
-    def _iter_ls_lines(self):
+    def _iter_getinfo_lines(self):
         locations = self.terminus_stack.get_listen_locations()
         accounts = self.directory.get_account_list()
         yield "ACCOUNTS:"
@@ -136,8 +136,8 @@ class TerminusApp(object):
         for account in accounts:
             yield "%s" % (account.summary_string(locations))
 
-    def ls(self, args):
-        return "\n".join(self._iter_ls_lines())
+    def getinfo(self, args):
+        return "\n".join(self._iter_getinfo_lines())
 
     ##########################################################################
 

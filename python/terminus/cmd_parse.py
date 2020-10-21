@@ -14,10 +14,10 @@ class TerminusCmdParse():
                                            description='valid app commands',
                                            help='app commands')
 
-        parser_ls = subparsers.add_parser('ls',
-                                          help='display summary')
+        parser_getinfo = subparsers.add_parser('getinfo',
+                                               help='display summary')
         if app:
-            parser_ls.set_defaults(cmd_func=app.ls)
+            parser_getinfo.set_defaults(cmd_func=app.getinfo)
 
 
         parser_create = subparsers.add_parser("create")
