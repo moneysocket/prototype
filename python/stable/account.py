@@ -4,6 +4,7 @@
 
 import logging
 
+from moneysocket.utl.bolt11 import Bolt11
 from moneysocket.beacon.beacon import MoneysocketBeacon
 
 from stable.account_db import AccountDb
@@ -12,6 +13,7 @@ class Account(object):
     def __init__(self, name, db=None):
         self.connection_attempts = {}
         self.db = db if db else AccountDb(name)
+        self.uuid = self.db.get_provider_uuid()
 
     @staticmethod
     def iter_persisted_accounts():
@@ -67,16 +69,45 @@ class Account(object):
     def set_msatoshis(self, msatoshis):
         self.db.set_msatoshis(msatoshis)
 
+    def increment_msatoshis(self, msatoshis):
+        self.db.increment_msatoshis(msatoshis)
+
+    def decrement_msatoshis(self, msatoshis):
+        self.db.decrement_msatoshis(msatoshis)
+
     def add_pending(self, payment_hash, bolt11):
         self.db.add_pending(payment_hash, bolt11)
 
     def remove_pending(self, payment_hash):
         self.db.remove_pending(payment_hash)
 
+    def iter_pending(self):
+        for p in self.db.iter_pending():
+            yield p
+
+    def add_paying(self, payment_hash, bolt11):
+        self.db.add_paying(payment_hash, bolt11)
+
+    def remove_paying(self, payment_hash):
+        self.db.remove_paying(payment_hash)
+
+    def iter_paying(self):
+        for p in self.db.iter_paying():
+            yield p
+
     def prune_expired_pending(self):
         self.db.prune_expired_pending()
 
+    def prune_expired_paying(self):
+        self.db.prune_expired_paying()
+
     ##########################################################################
+
+    def get_pending_msatoshis(self):
+        msats = 0
+        for _, bolt11 in self.get_pending():
+            msats += Bolt11.get_msats(bolt11)
+        return msats
 
     def get_msatoshis(self):
         return self.db.get_msatoshis()
@@ -86,6 +117,9 @@ class Account(object):
 
     def get_pending(self):
         return self.db.get_pending()
+
+    def get_paying(self):
+        return self.db.get_paying()
 
     def get_shared_seeds(self):
         return self.db.get_shared_seeds()

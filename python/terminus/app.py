@@ -83,7 +83,7 @@ class TerminusApp(object):
         account.set_msatoshis(new_msats)
 
         shared_seeds = account.get_all_shared_seeds()
-        self.terminus_layer.notify_preimage(shared_seeds, preimage)
+        self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     def terminus_request_invoice(self, shared_seed, msats):
         # TODO - this should be a request-> callback to allow for an
@@ -123,7 +123,7 @@ class TerminusApp(object):
         shared_seeds = account.get_all_shared_seeds()
         account.remove_pending(payment_hash)
         account.set_msatoshis(account.get_msatoshis() + msats)
-        self.terminus_layer.notify_preimage(shared_seeds, preimage)
+        self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     ##########################################################################
 
@@ -279,7 +279,7 @@ class TerminusApp(object):
 
         # deregister from local layer
         for shared_seed in account.get_shared_seeds():
-            self.terminus_layer.local_disconnect(shared_seed)
+            self.terminus_stack.local_disconnect(shared_seed)
             account.remove_shared_seed(shared_seed)
         self.directory.reindex_account(account)
         return "cleared connections for %s" % (args.account)
@@ -297,7 +297,7 @@ class TerminusApp(object):
                                                                  shared_seed)
                 account.add_connection_attempt(beacon, connection_attempt)
             for shared_seed in account.get_shared_seeds():
-                self.terminus_layer.local_connect(shared_seed)
+                self.terminus_stack.local_connect(shared_seed)
 
     ##########################################################################
 

@@ -5,6 +5,7 @@
 from moneysocket.protocol.nexus import ProtocolNexus
 from moneysocket.message.notification.invoice import NotifyInvoice
 from moneysocket.message.notification.preimage import NotifyPreimage
+from moneysocket.message.notification.provider import NotifyProvider
 
 
 LAYER_REQUESTS = {"REQUEST_PAY", "REQUEST_INVOICE"}
@@ -41,3 +42,9 @@ class ProviderTransactNexus(ProtocolNexus):
 
     def notify_preimage(self, preimage, request_reference_uuid):
         self.send(NotifyPreimage(preimage, None, request_reference_uuid))
+
+    def notify_provider_info(self, shared_seed):
+        pi = self.layer.stack.get_provider_info(shared_seed)
+        m = NotifyProvider(pi['provider_uuid'], payer=pi['payer'],
+                           payee=pi['payee'], msats=pi['msats'])
+        self.send(m)

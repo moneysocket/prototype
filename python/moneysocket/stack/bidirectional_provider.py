@@ -52,16 +52,16 @@ class BidirectionalProviderStack(object):
                                                    request_reference_uuid)
 
     def got_request_pay_cb(self, nexus, bolt11, request_uuid):
-        nexus_uuid = nexus.uuid
-        shared_seed = nexus.get_shared_seed()
-
-        err = self.app.provider_requesting_pay_cb(shared_seed, bolt11,
+        err = self.app.provider_requesting_pay_cb(nexus, bolt11,
                                                   request_uuid)
         if err:
             print("couldn't get invoice: %s" % err)
             # TODO - send back error
             return
 
+    def notify_preimage(self, shared_seeds, preimage, request_reference_uuid):
+        self.transact_layer.notify_preimage(shared_seeds, preimage,
+                                            request_reference_uuid)
 
     ###########################################################################
 

@@ -43,6 +43,11 @@ class TerminusStack(object):
 
     ###########################################################################
 
+    def notify_preimage(self, shared_seeds, preimage):
+        self.terminus_layer.notify_preimage(shared_seeds, preimage)
+
+    ###########################################################################
+
     def get_provider_info(self, shared_seed):
         return self.app.get_provider_info(shared_seed)
 

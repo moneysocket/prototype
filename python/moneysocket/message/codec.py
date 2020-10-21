@@ -29,7 +29,7 @@ class MessageCodec():
 
     @staticmethod
     def pad(msg_bytes):
-        print("msg byte len: %d" % len(msg_bytes))
+        #print("msg byte len: %d" % len(msg_bytes))
         BLOCK_SIZE = 16
         return msg_bytes + b'\0' * (BLOCK_SIZE - len(msg_bytes) % BLOCK_SIZE)
 
@@ -72,6 +72,18 @@ class MessageCodec():
         return True, MessageCodec.encrypt(msg_bytes, shared_seed)
 
     @staticmethod
+    def msg_not_ping(msg):
+        if not msg:
+            return True
+        if (msg['message_class'] == 'REQUEST' and
+            msg['request_name'] == "REQUEST_PING"):
+            return False
+        if (msg['message_class'] == 'NOTIFICATION' and
+            msg['notification_name'] == "NOTIFY_PING"):
+            return False
+        return True
+
+    @staticmethod
     def wire_decode(msg_bytes, shared_seed=None):
         is_cyphertext = MessageCodec.is_cyphertext(msg_bytes)
         if is_cyphertext and shared_seed is None:
@@ -84,12 +96,14 @@ class MessageCodec():
             except:
                 return None, "message did not decode to utf8"
 
-            print(msg_text)
+            #print(msg_text)
             msg, err = MoneysocketMessage.from_text(msg_text)
             if err:
                 return None, err
             if msg.MUST_BE_CLEARTEXT:
                 return None, "got encrypted msg which should have been clear"
+            if MessageCodec.msg_not_ping(msg):
+                print(msg_text)
             return msg, None
         else:
             try:
@@ -97,5 +111,8 @@ class MessageCodec():
             except:
                 return None, "message did not decode to utf8"
 
-            return MoneysocketMessage.from_text(msg_text)
+            msg, err = MoneysocketMessage.from_text(msg_text)
+            if MessageCodec.msg_not_ping(msg):
+                print(msg_text)
+            return msg, err
 

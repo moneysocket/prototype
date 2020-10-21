@@ -19,6 +19,7 @@ EMPTY_DB = {'account_name':  "",
             'provider_uuid': "",
             'msatoshis':     0,
             'pending':       {},
+            'paying':        {},
             'shared_seeds':  [],
             'beacons':       []}
 
@@ -125,11 +126,21 @@ class AccountDb(object):
         self.persist()
 
     def add_pending(self, payment_hash, bolt11):
+        print("added pending payment_hash %s" % payment_hash)
         self.db['pending'][payment_hash] = bolt11
         self.persist()
 
     def remove_pending(self, payment_hash):
         _ = self.db['pending'].pop(payment_hash, None)
+        self.persist()
+
+    def add_paying(self, payment_hash, bolt11):
+        print("added paying payment_hash %s" % payment_hash)
+        self.db['paying'][payment_hash] = bolt11
+        self.persist()
+
+    def remove_paying(self, payment_hash):
+        _ = self.db['paying'].pop(payment_hash, None)
         self.persist()
 
     ###########################################################################
@@ -164,6 +175,13 @@ class AccountDb(object):
     def get_pending(self):
         return list(self.iter_pending())
 
+    def iter_paying(self):
+        for payment_hash, bolt11 in self.db['paying'].items():
+            yield payment_hash, bolt11
+
+    def get_paying(self):
+        return list(self.iter_paying())
+
     ###########################################################################
 
     def prune_expired_pending(self):
@@ -174,3 +192,12 @@ class AccountDb(object):
             #                          expire_timestamp - time.time()))
             if time.time() > expire_timestamp:
                 del self.db['pending'][pending]
+
+    def prune_expired_paying(self):
+        for paying, bolt11 in list(self.iter_paying()):
+            info = Bolt11.to_dict(bolt11)
+            expire_timestamp = info['created_at'] + info['expiry']
+            #print("%s expire: %f" % (expire_timestamp,
+            #                          expire_timestamp - time.time()))
+            if time.time() > expire_timestamp:
+                del self.db['paying'][paying]

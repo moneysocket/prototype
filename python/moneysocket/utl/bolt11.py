@@ -90,6 +90,13 @@ class Bolt11(object):
         return None
 
     @staticmethod
+    def get_msats(bolt11):
+        for key, value in Bolt11.iter_attributes(bolt11):
+            if key == "msatoshi":
+                return value
+        return None
+
+    @staticmethod
     def preimage_to_payment_hash(preimage_str):
         preimage_bytes = bytes.fromhex(preimage_str)
         return sha256(preimage_bytes).hexdigest()

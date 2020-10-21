@@ -6,6 +6,7 @@ import random
 import uuid
 import logging
 
+from moneysocket.utl.bolt11 import Bolt11
 from moneysocket.stack.consumer import OutgoingConsumerStack
 from moneysocket.stack.bidirectional_provider import (
     BidirectionalProviderStack)
@@ -17,10 +18,9 @@ from stable.account_db import AccountDb
 from stable.directory import StableDirectory
 
 
-class StabledAccounting():
+class StabledAssetPool():
     def __init__(self):
         self.assets = {}
-        self.liabilities = {}
 
     def iter_lines(self):
         yield "Assets:"
@@ -29,16 +29,12 @@ class StabledAccounting():
             yield "\t\tmsats: %d   payer: %s   payee: %s" % (info['msats'],
                                                              info['payee'],
                                                              info['payer'])
-        yield "Liabilities:"
-        for info in self.liabilities.values():
-            yield "\ttodo"
 
     def __str__(self):
         return "\n".join(self.iter_lines())
 
     def add_asset(self, nexus_uuid, provider_info):
         # TODO transact layer to de-dupe nexuses with the same provider
-        assert nexus_uuid not in self.assets
         self.assets[nexus_uuid] = provider_info
 
     def forget_asset(self, nexus_uuid):
@@ -47,7 +43,7 @@ class StabledAccounting():
         return popped is not None
 
     def select_paying_nexus_uuid(self, msats):
-        for nexus_uuid, asset in self.assets.items():
+        for nexus_uuid, provider_info in self.assets.items():
             if msats < provider_info['msats']:
                 return nexus_uuid
         return None
@@ -60,26 +56,19 @@ class StabledAccounting():
         return random.choice(choices)
 
 
-    def add_liability(self, provider_info):
-        pass
-
-    def revoke_liability(self, provider_info):
-        pass
-
-
 class StabledApp():
     def __init__(self, config):
         self.config = config
         self.consumer_stack = OutgoingConsumerStack(self)
         self.provider_stack = BidirectionalProviderStack(config, self)
-        self.accounting = StabledAccounting()
-        self.assets = {}
+        self.asset_pool = StabledAssetPool()
 
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
-        self.directory = StableDirectory()
+        self.liabilities = StableDirectory()
 
         self.invoice_requests = {}
         self.pay_requests = {}
+
 
     ###########################################################################
 
@@ -87,7 +76,7 @@ class StabledApp():
         i = 0
         def account_name(n):
             return "account-%d" % n
-        while self.directory.lookup_by_name(account_name(i)) is not None:
+        while self.liabilities.lookup_by_name(account_name(i)) is not None:
             i += 1
         return account_name(i)
 
@@ -128,7 +117,7 @@ class StabledApp():
     def getinfo(self, parsed):
         locations = self.provider_stack.get_listen_locations()
         print("app getinfo")
-        s = str(self.accounting) + "\nAccounts:\n"
+        s = str(self.asset_pool) + "\nAccounts:\n"
         for a in Account.iter_persisted_accounts():
             s += a.summary_string(locations) + "\n"
         return s
@@ -158,12 +147,12 @@ class StabledApp():
         name = self.gen_account_name()
         account = Account(name)
         account.set_msatoshis(msats)
-        self.directory.add_account(account)
+        self.liabilities.add_account(account)
         return "created account: %s  msatoshis: %d" % (name, msats)
 
     def connect(self, parsed):
         name = parsed.account
-        account = self.directory.lookup_by_name(name)
+        account = self.liabilities.lookup_by_name(name)
         if not account:
             return "*** unknown account: %s" % name
 
@@ -180,13 +169,13 @@ class StabledApp():
         connection_attempt = self.provider_stack.connect(location, shared_seed)
         account.add_connection_attempt(beacon, connection_attempt)
         account.add_beacon(beacon)
-        self.directory.reindex_account(account)
+        self.liabilities.reindex_account(account)
         return "connected: %s to %s" % (name, str(location))
 
 
     def listen(self, parsed):
         name = parsed.account
-        account = self.directory.lookup_by_name(name)
+        account = self.liabilities.lookup_by_name(name)
         if not account:
             return "*** unknown account: %s" % name
 
@@ -208,13 +197,13 @@ class StabledApp():
         account.add_shared_seed(shared_seed)
         # register shared seed with local listener
         self.local_connect(shared_seed)
-        self.directory.reindex_account(account)
+        self.liabilities.reindex_account(account)
         return "listening: %s to %s" % (name, beacon)
 
 
     def clear(self, parsed):
         name = parsed.account
-        account = self.directory.lookup_by_name(name)
+        account = self.liabilities.lookup_by_name(name)
         if not account:
             return "*** unknown account: %s" % name
 
@@ -231,20 +220,20 @@ class StabledApp():
         for shared_seed in account.get_shared_seeds():
             self.provider_stack.local_disconnect(shared_seed)
             account.remove_shared_seed(shared_seed)
-        self.directory.reindex_account(account)
+        self.liabilities.reindex_account(account)
         return "cleared connections for %s" % (parsed.account)
 
 
     def rm(self, parsed):
         name = parsed.account
-        account = self.directory.lookup_by_name(name)
+        account = self.liabilities.lookup_by_name(name)
         if not account:
             return "*** unknown account: %s" % name
 
         if len(account.get_all_shared_seeds()) > 0:
             return "*** still has connections: %s" % name
 
-        self.directory.remove_account(account)
+        self.liabilities.remove_account(account)
         account.depersist()
         return "removed: %s" % name
 
@@ -261,7 +250,7 @@ class StabledApp():
 
     def consumer_report_provider_info_cb(self, nexus, provider_info):
         print("provider info: %s" % provider_info)
-        self.accounting.add_asset(nexus.uuid, provider_info)
+        self.asset_pool.add_asset(nexus.uuid, provider_info)
 
     def consumer_report_ping_cb(self, nexus, msecs):
         print("got ping: %s" % msecs)
@@ -278,15 +267,97 @@ class StabledApp():
             return
 
         request_info = self.invoice_requests.pop(request_reference_uuid)
-        provider_nexus_uuid = request_info['provider_nexus_uuid']
-        provider_request_uuid = request_info['provider_request_uuid']
+
+
+        liability_nexus_uuid = request_info['liability_nexus_uuid']
+        liability_request_uuid = request_info['liability_request_uuid']
+        liability_account_uuid = request_info['liability_account_uuid']
+        asset_nexus_uuid = request_info['asset_nexus_uuid']
+        msats_requested = request_info['msats_requested']
+
+        liability_account = self.liabilities.lookup_by_uuid(
+            liability_account_uuid)
+
+        if asset_nexus_uuid != nexus.uuid:
+            logging.info("got bolt11 from different nexus than requested?")
+
+        if not liability_account:
+            logging.error("liability account removed?")
+            return
+
+        bolt11_msats = Bolt11.get_msats(bolt11)
+        if bolt11_msats and bolt11_msats != msats_requested:
+            logging.error("got wrong msats amount?")
+            return
+
+        bolt11_payment_hash = Bolt11.get_payment_hash(bolt11)
+        liability_account.add_pending(bolt11_payment_hash, bolt11)
+        self.liabilities.reindex_account(liability_account)
+
+        # notify requesting provider of this bolt11
         self.provider_stack.fulfil_request_invoice_cb(
-            provider_nexus_uuid, bolt11, provider_request_uuid)
+            liability_nexus_uuid, bolt11, liability_request_uuid)
+        # TODO handle provider nexus gone?
+
+
+    def _handle_pending_preimage(self, nexus, preimage, request_reference_uuid):
+        payment_hash = Bolt11.preimage_to_payment_hash(preimage)
+        logging.info("preimage %s payment_hash %s" % (preimage, payment_hash))
+
+        liability_accounts = list(
+            self.liabilities.lookup_by_pending_payment_hash(payment_hash))
+        assert len(liability_accounts) <= 1, "can't handle collision yet"
+        if len(liability_accounts) == 0:
+            logging.error("got preimage not associated to liability?")
+            return
+        liability_account = liability_accounts[0]
+
+        shared_seeds = liability_account.get_all_shared_seeds()
+
+        msats_recvd = [Bolt11.get_msats(bolt11) for ph, bolt11 in
+                       liability_account.iter_pending() if
+                       ph == payment_hash][0]
+        liability_account.remove_pending(payment_hash)
+        liability_account.increment_msatoshis(msats_recvd)
+        self.liabilities.reindex_account(liability_account)
+        self.provider_stack.notify_preimage(shared_seeds, preimage, None)
+
+
+    def _handle_paying_preimage(self, nexus, preimage, request_reference_uuid):
+        payment_hash = Bolt11.preimage_to_payment_hash(preimage)
+        logging.info("preimage %s payment_hash %s" % (preimage, payment_hash))
+
+        liability_accounts = list(
+            self.liabilities.lookup_by_paying_payment_hash(payment_hash))
+        assert len(liability_accounts) <= 1, "can't handle collision yet"
+        if len(liability_accounts) == 0:
+            logging.error("got preimage not associated to liability?")
+            return
+        liability_account = liability_accounts[0]
+
+        shared_seeds = liability_account.get_all_shared_seeds()
+
+        msats_sent = [Bolt11.get_msats(bolt11) for ph, bolt11 in
+                      liability_account.iter_paying() if
+                      ph == payment_hash][0]
+        liability_account.remove_paying(payment_hash)
+        liability_account.decrement_msatoshis(msats_sent)
+        self.liabilities.reindex_account(liability_account)
+
+        if request_reference_uuid in self.pay_requests:
+            info = self.pay_requests.pop(request_reference_uuid)
+            rrid = info['liability_request_uuid']
+        else:
+            rrid = None
+
+        self.provider_stack.notify_preimage(shared_seeds, preimage, rrid)
 
 
     def consumer_report_preimage_cb(self, nexus, preimage,
                                     request_reference_uuid):
-        pass
+        self._handle_pending_preimage(nexus, preimage, request_reference_uuid)
+        self._handle_paying_preimage(nexus, preimage, request_reference_uuid)
+
 
     ###########################################################################
     # provider stack callbacks
@@ -303,30 +374,65 @@ class StabledApp():
 
     def get_provider_info(self, shared_seed):
         print("app - get provider info: %s" % shared_seed)
-        account = self.directory.lookup_by_seed(shared_seed)
+        account = self.liabilities.lookup_by_seed(shared_seed)
         if not account:
             # TODO - error instead?
             return {'ready': False}
         return account.get_provider_info()
 
     def provider_requesting_invoice_cb(self, nexus, msats, request_uuid):
-        nexus_uuid = self.accounting.select_receiving_nexus_uuid()
-        if not nexus_uuid:
-            return "no account capable of receiving"
-        print("receiving: %s" % nexus_uuid)
-        our_request_uuid, err = self.consumer_stack.request_invoice(nexus_uuid,
-                                                                    msats, "")
+
+        # determine liability account
+        shared_seed = nexus.get_shared_seed()
+        liability_account = self.liabilities.lookup_by_seed(shared_seed)
+        if not liability_account:
+            return "unknown account"
+
+        asset_nexus_uuid = self.asset_pool.select_receiving_nexus_uuid()
+        if not asset_nexus_uuid:
+            return "no stabled backend connection capable of receiving"
+        our_request_uuid, err = self.consumer_stack.request_invoice(
+            asset_nexus_uuid, msats, "")
         if err:
             return err
         self.invoice_requests[our_request_uuid] = {
-            'provider_nexus_uuid':   nexus.uuid,
-            'provider_request_uuid': request_uuid}
+            'liability_nexus_uuid':   nexus.uuid,
+            'liability_request_uuid': request_uuid,
+            'liability_account_uuid': liability_account.uuid,
+            'asset_nexus_uuid':       asset_nexus_uuid,
+            'msats_requested':        msats,
+            }
         return None
 
+    def provider_requesting_pay_cb(self, nexus, bolt11, request_uuid):
+        msats = Bolt11.get_msats(bolt11)
+        if not msats:
+            return "no amount specified in bolt11"
+        payment_hash = Bolt11.get_payment_hash(bolt11)
+        shared_seed = nexus.get_shared_seed()
+        liability_account = self.liabilities.lookup_by_seed(shared_seed)
+        spendable_msats = (liability_account.get_msatoshis() -
+                           liability_account.get_pending_msatoshis())
+        if msats > spendable_msats:
+            return  "insufficent balance to pay"
 
+        # decide which of our asset accounts will pay the bolt11
+        asset_nexus_uuid = self.asset_pool.select_paying_nexus_uuid(msats)
+        if not asset_nexus_uuid:
+            return "no account capable of receiving"
 
-    def provider_requesting_pay_cb(self, shared_seed, bolt11, request_uuid):
-        pass
+        liability_account.add_paying(payment_hash, bolt11)
+        self.liabilities.reindex_account(liability_account)
+
+        our_request_uuid = self.consumer_stack.request_pay(asset_nexus_uuid,
+                                                           bolt11)
+        self.pay_requests[our_request_uuid] = {
+            'liability_nexus_uuid':   nexus.uuid,
+            'liability_request_uuid': request_uuid,
+            'liability_account_uuid': liability_account.uuid,
+            'bolt11':                 bolt11,
+            'asset_nexus_uuid':       asset_nexus_uuid}
+
 
     ###########################################################################
     # run
@@ -334,7 +440,7 @@ class StabledApp():
 
     def load_persisted(self):
         for account in Account.iter_persisted_accounts():
-            self.directory.add_account(account)
+            self.liabilities.add_account(account)
             for beacon in account.get_beacons():
                 location = beacon.locations[0]
                 assert location.to_dict()['type'] == "WebSocket"
