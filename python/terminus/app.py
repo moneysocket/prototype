@@ -17,6 +17,7 @@ from moneysocket.utl.bolt11 import Bolt11
 from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
 from moneysocket.stack.incoming import IncomingStack
+from moneysocket.wad.wad import Wad
 
 from terminus.rpc import TerminusRpc
 from terminus.account import Account
@@ -70,19 +71,20 @@ class TerminusApp(object):
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
 
-        info = Bolt11.to_dict(bolt11)
-        msats = info['msatoshi']
-        available_msats = account.get_msatoshis()
-        if msats > available_msats:
+        msats = Bolt11.get_msats(bolt11)
+        wad = account.get_wad()
+        if msats > wad['msats']:
             return # msatoshi balance exceeded
 
         # TODO handle failure
         preimage, paid_msats = self.lightning.pay_invoice(bolt11)
 
-        new_msats = available_msats - paid_msats
-        account.set_msatoshis(new_msats)
+        paid_wad = Wad.bitcoin(paid_msats)
+
+        account.subtract_wad(paid_wad)
 
         shared_seeds = account.get_all_shared_seeds()
+        # TODO pay preimage
         self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     def terminus_request_invoice(self, shared_seed, msats):
@@ -103,7 +105,8 @@ class TerminusApp(object):
     ###########################################################################
 
     def node_received_payment_cb(self, preimage, msats):
-        logging.info("node received payment: %s %s" % (preimage, msats))
+        received_wad = Wad.bitcoin(msats)
+        logging.info("node received payment: %s %s" % (preimage, received_wad))
 
         payment_hash = Bolt11.preimage_to_payment_hash(preimage)
         # find accounts with this payment_hash
@@ -122,7 +125,7 @@ class TerminusApp(object):
         account = list(accounts)[0]
         shared_seeds = account.get_all_shared_seeds()
         account.remove_pending(payment_hash)
-        account.set_msatoshis(account.get_msatoshis() + msats)
+        account.add_wad(received_wad)
         self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
     ##########################################################################
@@ -150,46 +153,16 @@ class TerminusApp(object):
         return account_name(i)
 
 
-    def arg_to_msats(self, msat_string):
-        if msat_string.endswith("msat"):
-            try:
-                msats = int(msat_string[:-4])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("msats"):
-            try:
-                msats = int(msat_string[:-5])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("sat"):
-            try:
-                msats = 1000 * int(msat_string[:-3])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("sats"):
-            try:
-                msats = 1000 * int(msat_string[:-4])
-            except:
-                return None, "*** could not parse msat value"
-        else:
-            try:
-                msats = 1000 * int(msat_string)
-            except:
-                return None, "*** could not parse msat value"
-        if msats <= 0:
-            return None, "*** invalid msatoshis value"
-        return msats, None
-
     def create(self, args):
-        msats, err = self.arg_to_msats(args.msatoshis)
+        wad, err = Wad.bitcoin_from_msat_string(args.msatoshis)
         if err:
-            return err
+            return "*** " + err
 
         name = self.gen_account_name()
         account = Account(name)
-        account.set_msatoshis(msats)
+        account.set_wad(wad)
         self.directory.add_account(account)
-        return "created account: %s  msatoshis: %d" % (name, msats)
+        return "created account: %s  wad: %s" % (name, wad)
 
     ##########################################################################
 

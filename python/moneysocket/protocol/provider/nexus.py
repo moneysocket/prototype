@@ -60,13 +60,13 @@ class ProviderNexus(ProtocolNexus):
         shared_seed = self.below_nexus.get_shared_seed()
         provider_info = self.layer.stack.get_provider_info(shared_seed)
         assert provider_info['ready']
-        provider_uuid = provider_info['provider_uuid']
+        account_uuid = provider_info['account_uuid']
         payer = provider_info['payer']
         payee = provider_info['payee']
-        msats = provider_info['msats']
-        self.send(NotifyProvider(provider_uuid,
+        wad = provider_info['wad']
+        self.send(NotifyProvider(account_uuid,
                     request_reference_uuid=self.request_reference_uuid,
-                    payer=payer, payee=payee, msats=msats))
+                    payer=payer, payee=payee, wad=wad))
         self.provider_finished_cb(self)
 
     ###########################################################################

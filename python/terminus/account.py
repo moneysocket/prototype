@@ -24,8 +24,8 @@ class Account(object):
     ##########################################################################
 
     def iter_summary_lines(self, locations):
-        yield "\t%s: msatoshis: %s " % (self.db.get_name(),
-                                        self.db.get_msatoshis())
+        yield "\t%s: wad: %s " % (self.db.get_name(),
+                                        self.db.get_wad())
         for beacon in self.db.get_beacons():
             beacon_str = beacon.to_bech32_str()
             yield "\t\toutgoing beacon: %s" % beacon_str
@@ -64,9 +64,6 @@ class Account(object):
     def remove_shared_seed(self, shared_seed):
         self.db.remove_shared_seed(shared_seed)
 
-    def set_msatoshis(self, msatoshis):
-        self.db.set_msatoshis(msatoshis)
-
     def add_pending(self, payment_hash, bolt11):
         self.db.add_pending(payment_hash, bolt11)
 
@@ -78,8 +75,13 @@ class Account(object):
 
     ##########################################################################
 
-    def get_msatoshis(self):
-        return self.db.get_msatoshis()
+    def set_wad(self, wad):
+        self.db.set_wad(wad)
+
+    def get_wad(self):
+        self.db.get_wad(wad)
+
+    ##########################################################################
 
     def get_name(self):
         return self.db.get_name()
@@ -117,5 +119,5 @@ class Account(object):
         return {'ready':         True,
                 'payer':         True,
                 'payee':         True,
-                'msats':         self.db.get_msatoshis(),
-                'provider_uuid': self.db.get_provider_uuid()}
+                'wad':           self.db.get_wad(),
+                'account_uuid':  self.db.get_account_uuid()}
