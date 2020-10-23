@@ -7,8 +7,6 @@ from moneysocket.wad.fiat import FIAT
 from moneysocket.wad.cryptocurrency import CRYPTOCURRENCY
 from moneysocket.wad.rate import Rate
 
-BITCOIN_CODE = "BTC"
-
 BTC = {"code":      "BTC",
        "countries": "All",
        "decimals":  0,
@@ -17,8 +15,9 @@ BTC = {"code":      "BTC",
        "symbol":    "₿"}
 
 
+MSAT_PER_SAT = 1000.0
 SATS_PER_BTC = 100000000.0
-MSATS_PER_BTC = SATS_PER_BTC * 1000.0
+MSATS_PER_BTC = SATS_PER_BTC * MSAT_PER_SAT
 
 
 class Wad(dict):
@@ -47,6 +46,7 @@ class Wad(dict):
             assert not symbol
             self['contries'] = None
             self['decimals'] = 0
+            self['iso_num'] = None
             self['name'] = CRYPTOCURRENCY[code]['name']
             self['symbol'] = ""
         else:
@@ -61,7 +61,8 @@ class Wad(dict):
 
     def fmt_short(self):
         if not self['asset_stable']:
-            return "%s %.3f sat" % (self['symbol'], self['msats'] / 1000.0)
+            return "%s %.3f sat" % (self['symbol'],
+                                    self['msats'] / MSAT_PER_SAT)
         symb = ("%s " % self['symbol'] if
                 (self['symbol'] and self['symbol'] != "") else "")
         if self['decimals'] is not None:
@@ -74,7 +75,8 @@ class Wad(dict):
     def fmt_long(self):
         if not self['asset_stable']:
             return self.fmt_short()
-        return "%s (%.3f sat)" % (self.fmt_short(), self['msats'] / 1000.0)
+        return "%s (%.3f sat)" % (self.fmt_short(),
+                                  self['msats'] / MSAT_PER_SAT)
 
     @staticmethod
     def validate_wad_dict(wad_dict):
@@ -90,8 +92,8 @@ class Wad(dict):
             return "msats value negative"
         if type(wad_dict['asset_stable']) != bool:
             return "asset_stable not bool"
-        if type(wad_dict['asset_units']) != bool:
-            return "asset_units not integer"
+        if type(wad_dict['asset_units']) not in {float, int}:
+            return "asset_units not float"
         if wad_dict['asset_units'] < 0:
             return "asset_units value negative"
         if type(wad_dict['code']) != str:
@@ -178,7 +180,7 @@ class Wad(dict):
         return Wad(msats, True, usd, "USD")
 
     @staticmethod
-    def cad(cad, rate_btcad):
+    def cad(cad, rate_btccad):
         btc, code = rate_btccad.convert(cad, "CAD")
         assert code == "BTC"
         #print("%s cad to btc: %s" % (cad, btc))

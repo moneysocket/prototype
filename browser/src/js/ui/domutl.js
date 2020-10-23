@@ -84,10 +84,12 @@ class DomUtl {
         return d;
     }
 
-    static drawBigBalance(div, msats) {
+    static drawBigWad(div, wad) {
+        //var msats = wad.msats;
         var d = document.createElement("div");
         d.setAttribute("class", "balance");
-        var s = (msats / 1000.0).toFixed(3) + " sats";
+        //var s = (msats / 1000.0).toFixed(3) + " sats";
+        var s = wad.toString();
         var t = document.createTextNode(s);
         d.appendChild(t);
         div.appendChild(d);
@@ -98,9 +100,9 @@ class DomUtl {
         return (msats / 1000.0).toFixed(3) + " sats";
     }
 
-    static drawBalance(div, msats) {
+    static drawWad(div, wad) {
         var d = document.createElement("div");
-        var s = DomUtl.balanceFmt(msats);
+        var s = wad.toString();
         var t = document.createTextNode(s);
         d.appendChild(t);
         div.appendChild(d);

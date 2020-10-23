@@ -13,7 +13,7 @@ class DownstreamStatusUi {
         this.my_div = null;
 
         this.ping_time = 0;
-        this.provided_msats = null;
+        this.provided_wad = null;
 
         this.connected_div = null;
         this.ping_div = null;
@@ -30,7 +30,7 @@ class DownstreamStatusUi {
         this.balance_div = DomUtl.emptyDiv(this.my_div);
 
         this.ping_time = 0;
-        this.provided_msats = null;
+        this.provided_wad = null;
         this.updateDisconnected();
 
         this.my_div.setAttribute("class", divclass);
@@ -55,9 +55,9 @@ class DownstreamStatusUi {
         DomUtl.drawText(this.connected_div, this.title + ": " + CHECK_MARK);
         DomUtl.drawText(this.ping_div,
                         "Ping: " + this.ping_time.toString() + "ms");
-        if (this.provided_msats != null) {
+        if (this.provided_wad != null) {
             DomUtl.drawText(this.balance_div,
-                "Provided: " + DomUtl.balanceFmt(this.provided_msats));
+                "Provided: " + this.provided_wad.toString());
         } else {
             DomUtl.drawText(this.balance_div, "Provided: N/A");
         }
@@ -72,11 +72,11 @@ class DownstreamStatusUi {
         this.updateConnected();
     }
 
-    updateProviderMsats(msats) {
+    updateProviderWad(wad) {
         if (! this.connected) {
             return;
         }
-        this.provided_msats = msats;
+        this.provided_wad = wad;
         this.updateConnected();
     }
 }

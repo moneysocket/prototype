@@ -7,16 +7,19 @@ const BinUtl = require('../../utl/bin.js').BinUtl;
 const Uuid = require('../../utl/uuid.js').Uuid;
 const MoneysocketNotification = require(
     './notification.js').MoneysocketNotification;
+
+const Wad = require('../../wad/wad.js').Wad;
+
 let NOTIFICATION_SUBCLASSES = require(
     './notification.js').NOTIFICATION_SUBCLASSES;
 
 class NotifyProvider extends MoneysocketNotification {
-    constructor(provider_uuid, request_reference_uuid, payer, payee, msats) {
+    constructor(account_uuid, request_reference_uuid, payer, payee, wad) {
         super("NOTIFY_PROVIDER", request_reference_uuid);
-        this.provider_uuid = provider_uuid;
+        this.account_uuid = account_uuid;
         this.payer = payer
         this.payee = payee
-        this.msats = msats
+        this.wad = wad
     }
 
     cryptLevel() {
@@ -24,25 +27,32 @@ class NotifyProvider extends MoneysocketNotification {
     }
 
     static castClass(msg_dict) {
-        var c = new NotifyProvider(msg_dict['provider_uuid'],
+        var wad;
+        if (msg_dict['wad'] != null) {
+            wad = Wad.fromDict(msg_dict['wad']);
+        } else {
+            wad = null;
+        }
+        var c = new NotifyProvider(msg_dict['account_uuid'],
                                    msg_dict['request_reference_id'],
-                                   msg_dict['payer'], msg_dict['payee'],
-                                   msg_dict['msats']);
+                                   msg_dict['payer'], msg_dict['payee'], wad);
         Object.keys(msg_dict).forEach(key => {
-            c[key] = msg_dict[key];
+            if (key != 'wad') {
+                c[key] = msg_dict[key];
+            }
         });
         return c;
     }
 
     static checkValidMsgDict(msg_dict) {
-        if ( !('provider_uuid' in msg_dict)) {
-            return "no provider_uuid included";
+        if ( !('account_uuid' in msg_dict)) {
+            return "no account_uuid included";
         }
-        if (typeof msg_dict['provider_uuid'] != 'string') {
-            return "unknown provider_uuid type";
+        if (typeof msg_dict['account_uuid'] != 'string') {
+            return "unknown account_uuid type";
         }
-        if (! Uuid.isUuid(msg_dict['provider_uuid'])) {
-            return "invalid provider_uuid";
+        if (! Uuid.isUuid(msg_dict['account_uuid'])) {
+            return "invalid account_uuid";
         }
         if (typeof msg_dict['payee'] != "boolean") {
             return "payee must be True or False";
@@ -50,12 +60,13 @@ class NotifyProvider extends MoneysocketNotification {
         if (typeof msg_dict['payer'] != "boolean") {
             return "payer must be True or False";
         }
-        if (msg_dict['msats'] != null) {
-            if (typeof msg_dict['msats'] != 'number') {
-                return "msats must be an integer";
+        if (msg_dict['wad'] != null) {
+            if (typeof msg_dict['wad'] != 'object') {
+                return "wad must be a dictionary";
             }
-            if (msg_dict['msats'] < 0) {
-                return "msats must be a positive value";
+            var err = Wad.validate_wad_dict(msg_dict['wad']);
+            if (err != null) {
+                return err;
             }
         }
         return null;

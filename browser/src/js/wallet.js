@@ -8,6 +8,7 @@ const ConnectUi = require('./ui/connect.js').ConnectUi;
 const WalletUi = require("./wallet/ui.js").WalletUi;
 const ProviderStack = require("./moneysocket/stack/provider.js").ProviderStack;
 const ConsumerStack = require("./moneysocket/stack/consumer.js").ConsumerStack;
+const Wad = require("./moneysocket/wad/wad.js").Wad;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -27,7 +28,7 @@ class WalletApp {
 
         this.downstream_info = {'ready': false};
         this.upstream_info = {'ready': false};
-        this.provider_uuid = Uuid.uuidv4();
+        this.account_uuid = Uuid.uuidv4();
         this.requests_from_provider = new Set();
     }
 
@@ -56,11 +57,13 @@ class WalletApp {
     }
 
     consumerReportProviderInfoCb(provider_info) {
+        //console.log("provider info: " + JSON.stringify(provider_info));
+        //console.log("wad: " + provider_info['wad']);
         var was_ready = this.downstream_info['ready'];
         this.downstream_info = provider_info;
         this.downstream_info['ready'] = true;
         this.wallet_ui.balanceUpdateFromDownstream(
-            this.downstream_info['msats']);
+            this.downstream_info['wad']);
         if (! was_ready) {
             this.provider_stack.providerNowReadyFromApp();
         }
@@ -131,12 +134,12 @@ class WalletApp {
         return this.upstream_info;
     }
 
-    setUpstreamProviderMsats(msats) {
+    setUpstreamProviderWad(wad) {
         this.upstream_info = {'ready':         true,
                               'payer':         this.downstream_info['payer'],
                               'payee':         this.downstream_info['payee'],
-                              'msats':         msats,
-                              'provider_uuid': this.provider_uuid};
+                              'wad':           wad,
+                              'account_uuid':  this.account_uuid};
         this.provider_stack.sendProviderInfoUpdate();
     }
 

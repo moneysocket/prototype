@@ -6,6 +6,7 @@ const DomUtl = require('../ui/domutl.js').DomUtl;
 const UpstreamStatusUi = require('../ui/upstream_status.js').UpstreamStatusUi;
 const DownstreamStatusUi = require(
     '../ui/downstream_status.js').DownstreamStatusUi;
+const Wad = require("../moneysocket/wad/wad.js").Wad;
 
 const MODES = new Set(["PROVIDER_DISCONNECTED",
                        "MAIN",
@@ -22,8 +23,8 @@ class WalletUi {
         this.upstream_ui = null;
         this.downstream_ui = null;
 
-        this.provide_msats = 0;
-        this.provider_msats = 0;
+        this.provide_wad = Wad.bitcoin(0);
+        this.provider_wad = Wad.bitcoin(0);
 
         this.balance_div = null;
         this.slider_input = null;
@@ -64,7 +65,7 @@ class WalletUi {
             t.setAttribute("style", "padding:5px;");
         } else if (new_mode == "MAIN") {
             this.balance_div = DomUtl.emptyDiv(this.wallet_mode_div);
-            DomUtl.drawBigBalance(this.balance_div, this.provide_msats);
+            DomUtl.drawBigWad(this.balance_div, this.provide_wad);
             DomUtl.drawBr(this.wallet_mode_div);
             DomUtl.drawButton(this.wallet_mode_div, "Manual Send",
                 (function() {
@@ -85,11 +86,11 @@ class WalletUi {
             DomUtl.drawBr(this.wallet_mode_div);
             this.slider_input = s.firstChild;
             this.slider_input.oninput = (function () {
-                this.updateProvideMsats();
+                this.updateProvideWad();
             }.bind(this));
         } else if (new_mode == "SEND") {
             this.balance_div = DomUtl.emptyDiv(this.wallet_mode_div);
-            DomUtl.drawBigBalance(this.balance_div, this.provide_msats);
+            DomUtl.drawBigWad(this.balance_div, this.provide_wad);
             DomUtl.drawBr(this.wallet_mode_div);
 
             var t = DomUtl.drawText(this.wallet_mode_div, "Provide Bolt11");
@@ -113,7 +114,7 @@ class WalletUi {
 
         } else if (new_mode == "RECEIVE") {
             this.balance_div = DomUtl.emptyDiv(this.wallet_mode_div);
-            DomUtl.drawBigBalance(this.balance_div, this.provide_msats);
+            DomUtl.drawBigWad(this.balance_div, this.provide_wad);
             DomUtl.drawBr(this.wallet_mode_div);
 
             this.receive_div = DomUtl.emptyDiv(this.wallet_mode_div);
@@ -136,12 +137,17 @@ class WalletUi {
         }
     }
 
-    updateProvideMsats() {
+    updateProvideWad() {
         this.slider_val = this.slider_input.value;
-        this.provide_msats = this.provider_msats * (this.slider_val / 100);
+
+        var msats = this.provider_wad.msats;
+        var asset_units = this.provider_wad.asset_units;
+        this.provide_wad.msats = Math.round(msats * (this.slider_val / 100))
+        this.provide_wad.asset_units = Math.round(
+            asset_units * (this.slider_val / 100))
         DomUtl.deleteChildren(this.balance_div);
-        DomUtl.drawBigBalance(this.balance_div, this.provide_msats);
-        this.app.setUpstreamProviderMsats(this.provide_msats);
+        DomUtl.drawBigWad(this.balance_div, this.provide_wad);
+        this.app.setUpstreamProviderWad(this.provide_wad);
     }
 
     consumerOnline() {
@@ -156,10 +162,10 @@ class WalletUi {
         this.switchMode("PROVIDER_DISCONNECTED");
     }
 
-    balanceUpdateFromDownstream(msats) {
-        this.downstream_ui.updateProviderMsats(msats);
-        this.provider_msats = msats;
-        this.updateProvideMsats();
+    balanceUpdateFromDownstream(wad) {
+        this.downstream_ui.updateProviderWad(wad);
+        this.provider_wad = wad;
+        this.updateProvideWad();
     }
 
     pingUpdate(msecs) {

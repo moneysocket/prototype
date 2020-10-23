@@ -54,8 +54,8 @@ class ConsumerStack {
     notifyProviderCb(consumer_nexus, msg) {
         var provider_info = {'payer':         msg['payer'],
                              'payee':         msg['payee'],
-                             'msats':         msg['msats'],
-                             'provider_uuid': msg['provider_uuid']};
+                             'wad':           msg['wad'],
+                             'account_uuid':  msg['account_uuid']};
         this.app.consumerReportProviderInfoCb(provider_info);
     }
 
