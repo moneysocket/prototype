@@ -24,7 +24,7 @@ class Wad(dict):
     def __init__(self, msats, asset_stable, asset_units, code,
                  countries=None, decimals=None, name=None, symbol=None):
         super().__init__()
-        assert msats > 0, "must be positive msat value"
+        assert msats >= 0, "must be positive msat value"
         self['msats'] = msats
         self['asset_stable'] = asset_stable
         self['asset_units'] = asset_units
@@ -34,10 +34,10 @@ class Wad(dict):
             self.update(BTC)
             self.asset_units = msats / MSATS_PER_BTC
         elif code in FIAT:
-            assert not countries
-            assert not decimals
-            assert not name
-            assert not symbol
+            #assert not countries
+            #assert not decimals
+            #assert not name
+            #assert not symbol
             self.update(FIAT[code])
         elif code in CRYPTOCURRENCY:
             assert not countries
@@ -127,7 +127,7 @@ class Wad(dict):
     @staticmethod
     def from_dict(wad_dict):
         if wad_dict is None:
-            return Wad.bitcoin(9)
+            return Wad.bitcoin(0)
         return Wad(wad_dict['msats'], wad_dict['asset_stable'],
                    wad_dict['asset_units'], wad_dict['code'],
                    countries=wad_dict['countries'],

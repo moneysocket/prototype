@@ -47,10 +47,10 @@ class Wad {
             this.name = BTC['name'];
             this.symbol = BTC['symbol'];
         } else if (code in FIAT) {
-            console.assert(countries == null);
-            console.assert(decimals == null);
-            console.assert(name == null);
-            console.assert(symbol == null);
+            //console.assert(countries == null);
+            //console.assert(decimals == null);
+            //console.assert(name == null);
+            //console.assert(symbol == null);
 
             this.countries = FIAT[code]['countries'];
             this.decimals = FIAT[code]['decimals'];
@@ -97,7 +97,7 @@ class Wad {
         if (this.decimals != null) {
             dec = this.decimals;
         }
-        var asset = this.asset_units.toFixed(decimals);
+        var asset = this.asset_units.toFixed(this.decimals);
         return symb + asset + " " + this.code;
     }
 
@@ -111,6 +111,13 @@ class Wad {
 
     ///////////////////////////////////////////////////////////////////////////
 
+    static clone(wad) {
+        return new Wad(wad['msats'], wad['asset_stable'], wad['asset_units'],
+                       wad['code'], wad['countries'], wad['decimals'],
+                       wad['name'], wad['symbol'])
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     static validate_wad_dict(wad_dict) {
         if (typeof wad_dict != 'object') {
@@ -152,7 +159,7 @@ class Wad {
             if (typeof wad_dict['countries'] != 'string') {
                 return "countries not string";
             }
-            if (wad_dict['countries'].length > 200) {
+            if (wad_dict['countries'].length > 1000) {
                 return "countries string too long";
             }
         }

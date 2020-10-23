@@ -140,11 +140,13 @@ class WalletUi {
     updateProvideWad() {
         this.slider_val = this.slider_input.value;
 
+        var new_provide = Wad.clone(this.provider_wad);
         var msats = this.provider_wad.msats;
         var asset_units = this.provider_wad.asset_units;
-        this.provide_wad.msats = Math.round(msats * (this.slider_val / 100))
-        this.provide_wad.asset_units = Math.round(
+        new_provide.msats = Math.round(msats * (this.slider_val / 100))
+        new_provide.asset_units = Math.round(
             asset_units * (this.slider_val / 100))
+        this.provide_wad = new_provide;
         DomUtl.deleteChildren(this.balance_div);
         DomUtl.drawBigWad(this.balance_div, this.provide_wad);
         this.app.setUpstreamProviderWad(this.provide_wad);

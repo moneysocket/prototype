@@ -229,7 +229,7 @@ class TerminusApp(object):
         beacon.locations = self.terminus_stack.get_listen_locations()
         account.add_shared_seed(shared_seed)
         # register shared seed with local listener
-        self.local_connect(shared_seed)
+        self.terminus_stack.local_connect(shared_seed)
         self.directory.reindex_account(account)
         return "listening: %s to %s" % (name, beacon)
 

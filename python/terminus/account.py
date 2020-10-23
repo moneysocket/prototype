@@ -24,8 +24,7 @@ class Account(object):
     ##########################################################################
 
     def iter_summary_lines(self, locations):
-        yield "\t%s: wad: %s " % (self.db.get_name(),
-                                        self.db.get_wad())
+        yield "\t%s: wad: %s " % (self.db.get_name(), self.db.get_wad())
         for beacon in self.db.get_beacons():
             beacon_str = beacon.to_bech32_str()
             yield "\t\toutgoing beacon: %s" % beacon_str
@@ -80,6 +79,12 @@ class Account(object):
 
     def get_wad(self):
         self.db.get_wad(wad)
+
+    def add_wad(self, wad):
+        self.db.add_wad(wad)
+
+    def subtract_wad(self, wad):
+        self.db.subtract_wad(wad)
 
     ##########################################################################
 

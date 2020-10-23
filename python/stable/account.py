@@ -13,7 +13,7 @@ class Account(object):
     def __init__(self, name, db=None):
         self.connection_attempts = {}
         self.db = db if db else AccountDb(name)
-        self.uuid = self.db.get_provider_uuid()
+        self.uuid = self.db.get_account_uuid()
 
     @staticmethod
     def iter_persisted_accounts():
@@ -26,8 +26,8 @@ class Account(object):
     ##########################################################################
 
     def iter_summary_lines(self, locations):
-        yield "\t%s: msatoshis: %s " % (self.db.get_name(),
-                                        self.db.get_msatoshis())
+        yield "\t%s: wad: %s " % (self.db.get_name(),
+                                  self.db.get_wad())
         for beacon in self.db.get_beacons():
             beacon_str = beacon.to_bech32_str()
             yield "\t\toutgoing beacon: %s" % beacon_str
@@ -66,14 +66,6 @@ class Account(object):
     def remove_shared_seed(self, shared_seed):
         self.db.remove_shared_seed(shared_seed)
 
-    def set_msatoshis(self, msatoshis):
-        self.db.set_msatoshis(msatoshis)
-
-    def increment_msatoshis(self, msatoshis):
-        self.db.increment_msatoshis(msatoshis)
-
-    def decrement_msatoshis(self, msatoshis):
-        self.db.decrement_msatoshis(msatoshis)
 
     def add_pending(self, payment_hash, bolt11):
         self.db.add_pending(payment_hash, bolt11)
@@ -94,6 +86,22 @@ class Account(object):
     def iter_paying(self):
         for p in self.db.iter_paying():
             yield p
+
+    ##########################################################################
+
+    def set_wad(self, wad):
+        self.db.set_wad(wad)
+
+    def get_wad(self):
+        self.db.get_wad(wad)
+
+    def add_wad(self, wad):
+        self.db.add_wad(wad)
+
+    def subtract_wad(self, wad):
+        self.db.subtract_wad(wad)
+
+    ##########################################################################
 
     def prune_expired_pending(self):
         self.db.prune_expired_pending()
@@ -148,8 +156,8 @@ class Account(object):
 
 
     def get_provider_info(self):
-        return {'ready':         True,
-                'payer':         True,
-                'payee':         True,
-                'msats':         self.db.get_msatoshis(),
-                'provider_uuid': self.db.get_provider_uuid()}
+        return {'ready':        True,
+                'payer':        True,
+                'payee':        True,
+                'wad':          self.db.get_wad(),
+                'account_uuid': self.db.get_account_uuid()}

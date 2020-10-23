@@ -41,8 +41,8 @@ class ConsumerStack(object):
     def notify_provider_cb(self, transact_nexus, msg):
         provider_info = {'payer':         msg['payer'],
                          'payee':         msg['payee'],
-                         'msats':         msg['msats'],
-                         'provider_uuid': msg['provider_uuid']}
+                         'wad':           msg['wad'],
+                         'account_uuid':  msg['account_uuid']}
         self.app.consumer_report_provider_info_cb(transact_nexus, provider_info)
 
     def notify_ping_cb(self, transact_nexus, msecs):
