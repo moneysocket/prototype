@@ -32,7 +32,9 @@ class NotifyProvider(MoneysocketNotification):
             request_reference_uuid=msg_dict['request_reference_uuid'],
             payer=msg_dict['payer'], payee=msg_dict['payee'],
             wad=Wad.from_dict(msg_dict['wad']))
-        c.update(msg_dict)
+        for key, value in msg_dict.items():
+            if (key != 'wad'):
+                c[key] = value
         return c
 
     @staticmethod

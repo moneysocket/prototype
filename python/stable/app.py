@@ -28,9 +28,8 @@ class StabledAssetPool():
         yield "Assets:"
         for info in self.assets.values():
             yield "\tuuid: %s" % info['account_uuid']
-            yield "\t\twad: %s   payer: %s   payee: %s" % (info['wad'],
-                                                           info['payee'],
-                                                           info['payer'])
+            yield "\t\twad: %s   payer: %s   payee: %s" % (
+                info['wad'].fmt_short(), info['payee'], info['payer'])
 
     def __str__(self):
         return "\n".join(self.iter_lines())
