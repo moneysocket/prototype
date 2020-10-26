@@ -74,13 +74,13 @@ class ProviderNexus extends ProtocolNexus {
         var shared_seed = this.getSharedSeed();
         var provider_info = this.layer.stack.getProviderInfo(shared_seed);
         console.assert(provider_info['ready']);
-        var provider_uuid = provider_info['provider_uuid'];
+        var account_uuid = provider_info['account_uuid'];
         var payer = provider_info['payer'];
         var payee = provider_info['payee'];
-        var msats = provider_info['msats'];
+        var wad = provider_info['wad'];
 
-        this.send(new NotifyProvider(provider_uuid, this.request_reference_uuid,
-                                     payer, payee, msats));
+        this.send(new NotifyProvider(account_uuid, this.request_reference_uuid,
+                                     payer, payee, wad));
 
     }
 

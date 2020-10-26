@@ -71,7 +71,7 @@ class TerminusStack(object):
         self.local_layer.connect(shared_seed)
 
     def local_disconnect(self, shared_seed):
-        self.local_layer_disconnect(shared_seed)
+        self.local_layer.disconnect(shared_seed)
 
     ###########################################################################
 

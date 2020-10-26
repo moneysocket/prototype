@@ -5,6 +5,7 @@
 const DomUtl = require('../ui/domutl.js').DomUtl;
 const DownstreamStatusUi = require(
     '../ui/downstream_status.js').DownstreamStatusUi;
+const Wad = require('../moneysocket/wad/wad.js').Wad;
 
 const MODES = new Set(["BOTH_DISCONNECTED",
                        "MY_WALLET_DISCONNECTED",
@@ -26,7 +27,7 @@ class BuyerUi {
 
         this.log = null;
 
-        this.available_msats = 0;
+        this.available_wad = Wad.bitcoin(0);
         this.seller_consumer_connected = false;
         this.my_seller_connected = false;
         this.buying_running = false;
@@ -61,7 +62,7 @@ class BuyerUi {
             t.setAttribute("style", "padding:5px;");
         } else if (new_mode == "SELLER_DISCONNECTED") {
             this.balance_div = DomUtl.emptyDiv(this.buyer_mode_div);
-            DomUtl.drawBigBalance(this.balance_div, this.available_msats);
+            DomUtl.drawBigWad(this.balance_div, this.available_wad);
             DomUtl.drawBr(this.buyer_mode_div);
             DomUtl.drawBr(this.buyer_mode_div);
             var t = DomUtl.drawText(this.buyer_mode_div,
@@ -73,7 +74,7 @@ class BuyerUi {
             t.setAttribute("style", "padding:5px;");
         } else if (new_mode == "OPERATE") {
             this.balance_div = DomUtl.emptyDiv(this.buyer_mode_div);
-            DomUtl.drawBigBalance(this.balance_div, this.available_msats);
+            DomUtl.drawBigWad(this.balance_div, this.available_wad);
             this.buttons_div = DomUtl.emptyDiv(this.buyer_mode_div);
             this.log = DomUtl.drawLog(this.buyer_mode_div);
         } else {
@@ -133,10 +134,10 @@ class BuyerUi {
     }
 
     balanceUpdate(provider_info) {
-        this.available_msats = provider_info['msats'];
-        this.downstream_ui.updateProviderMsats(this.available_msats);
+        this.available_wad = provider_info['wad'];
+        this.downstream_ui.updateProviderWad(this.available_wad);
         DomUtl.deleteChildren(this.balance_div);
-        DomUtl.drawBigBalance(this.balance_div, this.available_msats);
+        DomUtl.drawBigWad(this.balance_div, this.available_wad);
     }
 
     sellerOnline() {

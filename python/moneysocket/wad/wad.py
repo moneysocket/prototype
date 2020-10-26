@@ -3,11 +3,9 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-from fiat import FIAT
-from cryptocurrency import CRYPTOCURRENCY
-from rate import Rate
-
-BITCOIN_CODE = "BTC"
+from moneysocket.wad.fiat import FIAT
+from moneysocket.wad.cryptocurrency import CRYPTOCURRENCY
+from moneysocket.wad.rate import Rate
 
 BTC = {"code":      "BTC",
        "countries": "All",
@@ -17,14 +15,16 @@ BTC = {"code":      "BTC",
        "symbol":    "₿"}
 
 
+MSAT_PER_SAT = 1000.0
 SATS_PER_BTC = 100000000.0
-MSATS_PER_BTC = SATS_PER_BTC * 1000.0
+MSATS_PER_BTC = SATS_PER_BTC * MSAT_PER_SAT
 
 
 class Wad(dict):
     def __init__(self, msats, asset_stable, asset_units, code,
                  countries=None, decimals=None, name=None, symbol=None):
         super().__init__()
+        assert msats >= 0, "must be positive msat value"
         self['msats'] = msats
         self['asset_stable'] = asset_stable
         self['asset_units'] = asset_units
@@ -34,10 +34,10 @@ class Wad(dict):
             self.update(BTC)
             self.asset_units = msats / MSATS_PER_BTC
         elif code in FIAT:
-            assert not countries
-            assert not decimals
-            assert not name
-            assert not symbol
+            #assert not countries
+            #assert not decimals
+            #assert not name
+            #assert not symbol
             self.update(FIAT[code])
         elif code in CRYPTOCURRENCY:
             assert not countries
@@ -46,17 +46,23 @@ class Wad(dict):
             assert not symbol
             self['contries'] = None
             self['decimals'] = 0
+            self['iso_num'] = None
             self['name'] = CRYPTOCURRENCY[code]['name']
             self['symbol'] = ""
         else:
             self['countries'] = countries
             self['decimals'] = decimals
+            self['iso_num'] = None
             self['name'] = name
             self['symbol'] = symbol
 
+    def __str__(self):
+        return self.fmt_short()
+
     def fmt_short(self):
         if not self['asset_stable']:
-            return "%s %.3f sat" % (self['symbol'], self['msats'] / 1000.0)
+            return "%s %.3f sat" % (self['symbol'],
+                                    self['msats'] / MSAT_PER_SAT)
         symb = ("%s " % self['symbol'] if
                 (self['symbol'] and self['symbol'] != "") else "")
         if self['decimals'] is not None:
@@ -69,7 +75,95 @@ class Wad(dict):
     def fmt_long(self):
         if not self['asset_stable']:
             return self.fmt_short()
-        return "%s (%.3f sat)" % (self.fmt_short(), self['msats'] / 1000.0)
+        return "%s (%.3f sat)" % (self.fmt_short(),
+                                  self['msats'] / MSAT_PER_SAT)
+
+    @staticmethod
+    def validate_wad_dict(wad_dict):
+        if type(wad_dict) != dict:
+            return "is not a dictionary"
+        if set(wad_dict.keys()) != {'msats', 'asset_stable', 'asset_units',
+                                    'code', 'countries', 'decimals',
+                                   'iso_num', 'name', 'symbol'}:
+            return "key set not consistent with wad dictionary"
+        if type(wad_dict['msats']) != int:
+            return "msats valie not iteger"
+        if wad_dict['msats'] < 0:
+            return "msats value negative"
+        if type(wad_dict['asset_stable']) != bool:
+            return "asset_stable not bool"
+        if type(wad_dict['asset_units']) not in {float, int}:
+            return "asset_units not float"
+        if wad_dict['asset_units'] < 0:
+            return "asset_units value negative"
+        if type(wad_dict['code']) != str:
+            return "code not string"
+        if len(wad_dict['code']) > 20:
+            return "code string too long"
+        if wad_dict['countries'] is not None:
+            if type(wad_dict['countries']) != str:
+                return "countries not string"
+            if len(wad_dict['countries']) > 200:
+                return "countries string too long"
+        if wad_dict['decimals'] is not None:
+            if type(wad_dict['decimals']) != int:
+                return "decimals not int"
+            if wad_dict['decimals'] < 0:
+                return "decimals negative value"
+            if wad_dict['decimals'] > 10:
+                return "decimals more than 10?"
+        if wad_dict['name'] is not None:
+            if type(wad_dict['name']) != str:
+                return "name not string"
+            if len(wad_dict['name']) > 50:
+                return "name string too long"
+        if wad_dict['symbol'] is not None:
+            if type(wad_dict['symbol']) != str:
+                return "symbol not string"
+            if len(wad_dict['symbol']) > 5:
+                return "symbol string too long"
+        return None
+
+    @staticmethod
+    def from_dict(wad_dict):
+        if wad_dict is None:
+            return Wad.bitcoin(0)
+        return Wad(wad_dict['msats'], wad_dict['asset_stable'],
+                   wad_dict['asset_units'], wad_dict['code'],
+                   countries=wad_dict['countries'],
+                   decimals=wad_dict['decimals'], name=wad_dict['name'],
+                   symbol=wad_dict['symbol'])
+
+    @staticmethod
+    def bitcoin_from_msat_string(msat_string):
+        if msat_string.endswith("msat"):
+            try:
+                msats = int(msat_string[:-4])
+            except:
+                return None, "could not parse msat value"
+        elif msat_string.endswith("msats"):
+            try:
+                msats = int(msat_string[:-5])
+            except:
+                return None, "could not parse msat value"
+        elif msat_string.endswith("sat"):
+            try:
+                msats = 1000 * int(msat_string[:-3])
+            except:
+                return None, "could not parse msat value"
+        elif msat_string.endswith("sats"):
+            try:
+                msats = 1000 * int(msat_string[:-4])
+            except:
+                return None, "could not parse msat value"
+        else:
+            try:
+                msats = 1000 * int(msat_string)
+            except:
+                return None, "could not parse msat value"
+        if msats <= 0:
+            return None, "invalid msatoshis value"
+        return Wad.bitcoin(msats), None
 
 
     @staticmethod
@@ -86,7 +180,7 @@ class Wad(dict):
         return Wad(msats, True, usd, "USD")
 
     @staticmethod
-    def cad(cad, rate_btcad):
+    def cad(cad, rate_btccad):
         btc, code = rate_btccad.convert(cad, "CAD")
         assert code == "BTC"
         #print("%s cad to btc: %s" % (cad, btc))

@@ -84,27 +84,39 @@ class DomUtl {
         return d;
     }
 
-    static drawBigBalance(div, msats) {
+    static drawBigWad(div, wad) {
+        //var msats = wad.msats;
+        var span = document.createElement("span");
+        var sats = DomUtl.balanceFmt(wad['msats']);
+        var hoverstring = wad['name'] + "\n" + sats;
+        span.setAttribute("title", hoverstring);
         var d = document.createElement("div");
         d.setAttribute("class", "balance");
-        var s = (msats / 1000.0).toFixed(3) + " sats";
+        //var s = (msats / 1000.0).toFixed(3) + " sats";
+        var s = wad.toString();
         var t = document.createTextNode(s);
         d.appendChild(t);
-        div.appendChild(d);
-        return d;
+        span.appendChild(d)
+        div.appendChild(span);
+        return span;
     }
 
     static balanceFmt(msats) {
         return (msats / 1000.0).toFixed(3) + " sats";
     }
 
-    static drawBalance(div, msats) {
+    static drawWad(div, wad) {
+        var span = document.createElement("span");
+        var sats = DomUtl.balanceFmt(wad['msats']);
+        var hoverstring = wad['name'] + "\n" + sats;
+        span.setAttribute("title", hoverstring);
         var d = document.createElement("div");
-        var s = DomUtl.balanceFmt(msats);
+        var s = wad.toString();
         var t = document.createTextNode(s);
         d.appendChild(t);
-        div.appendChild(d);
-        return d;
+        span.appendChild(d)
+        div.appendChild(span);
+        return span;
     }
 
     static emptyDiv(div) {

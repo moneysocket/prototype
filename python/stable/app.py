@@ -12,6 +12,8 @@ from moneysocket.stack.bidirectional_provider import (
     BidirectionalProviderStack)
 from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
+from moneysocket.wad.wad import Wad
+from moneysocket.wad.rate import Rate
 
 from stable.account import Account
 from stable.account_db import AccountDb
@@ -25,10 +27,9 @@ class StabledAssetPool():
     def iter_lines(self):
         yield "Assets:"
         for info in self.assets.values():
-            yield "\tuuid: %s" % info['provider_uuid']
-            yield "\t\tmsats: %d   payer: %s   payee: %s" % (info['msats'],
-                                                             info['payee'],
-                                                             info['payer'])
+            yield "\tuuid: %s" % info['account_uuid']
+            yield "\t\twad: %s   payer: %s   payee: %s" % (
+                info['wad'].fmt_short(), info['payee'], info['payer'])
 
     def __str__(self):
         return "\n".join(self.iter_lines())
@@ -44,7 +45,7 @@ class StabledAssetPool():
 
     def select_paying_nexus_uuid(self, msats):
         for nexus_uuid, provider_info in self.assets.items():
-            if msats < provider_info['msats']:
+            if msats < provider_info['wad'].msats:
                 return nexus_uuid
         return None
 
@@ -80,36 +81,6 @@ class StabledApp():
             i += 1
         return account_name(i)
 
-    def arg_to_msats(self, msat_string):
-        if msat_string.endswith("msat"):
-            try:
-                msats = int(msat_string[:-4])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("msats"):
-            try:
-                msats = int(msat_string[:-5])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("sat"):
-            try:
-                msats = 1000 * int(msat_string[:-3])
-            except:
-                return None, "*** could not parse msat value"
-        elif msat_string.endswith("sats"):
-            try:
-                msats = 1000 * int(msat_string[:-4])
-            except:
-                return None, "*** could not parse msat value"
-        else:
-            try:
-                msats = 1000 * int(msat_string)
-            except:
-                return None, "*** could not parse msat value"
-        if msats <= 0:
-            return None, "*** invalid msatoshis value"
-        return msats, None
-
     ###########################################################################
     # stable-cli commands
     ###########################################################################
@@ -135,20 +106,29 @@ class StabledApp():
         return None
 
     def createstable(self, parsed):
-        return None
+        name = self.gen_account_name()
+        print("generated: %s" % name)
+        rate_btcusd = Rate("BTC", parsed.asset, 12928.12)
+
+        wad = Wad.usd(float(parsed.amount), rate_btcusd)
+        account = Account(name)
+        account.set_wad(wad)
+        self.liabilities.add_account(account)
+        return "created account: %s  wad: %s" % (name, wad)
+
 
     def create(self, parsed):
         name = self.gen_account_name()
         print("generated: %s" % name)
 
-        msats, err = self.arg_to_msats(parsed.msatoshis)
+        wad, err = Wad.bitcoin_from_msat_string(parsed.msatoshis)
         if err:
             return err
-        name = self.gen_account_name()
+
         account = Account(name)
-        account.set_msatoshis(msats)
+        account.set_wad(wad)
         self.liabilities.add_account(account)
-        return "created account: %s  msatoshis: %d" % (name, msats)
+        return "created account: %s  wad: %s" % (name, wad)
 
     def connect(self, parsed):
         name = parsed.account
@@ -318,7 +298,7 @@ class StabledApp():
                        liability_account.iter_pending() if
                        ph == payment_hash][0]
         liability_account.remove_pending(payment_hash)
-        liability_account.increment_msatoshis(msats_recvd)
+        liability_account.add_wad(Wad.bitcoin(msats_recvd))
         self.liabilities.reindex_account(liability_account)
         self.provider_stack.notify_preimage(shared_seeds, preimage, None)
 
@@ -341,7 +321,7 @@ class StabledApp():
                       liability_account.iter_paying() if
                       ph == payment_hash][0]
         liability_account.remove_paying(payment_hash)
-        liability_account.decrement_msatoshis(msats_sent)
+        liability_account.subtract_wad(Wad.bitcoin(msats_sent))
         self.liabilities.reindex_account(liability_account)
 
         if request_reference_uuid in self.pay_requests:

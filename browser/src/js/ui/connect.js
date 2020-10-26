@@ -24,7 +24,8 @@ const DEFAULT_USE_TLS = true;
 //const DEFAULT_USE_TLS = false;
 
 //////////////////////////////////////////////////////////////////////////////
-
+const copy = require('clipboard-copy')
+//////////////////////////////////////////////////////////////////////////////
 
 const MODES = new Set(["ENTER_BEACON",
                        "GENERATED_BEACON",
@@ -235,7 +236,7 @@ class ConnectUi {
     ///////////////////////////////////////////////////////////////////////////
 
     copyBeacon() {
-        navigator.clipboard.writeText(this.beacon_str);
+        copy(this.beacon_str)
         console.log("copied: " + this.beacon_str);
         this.setMessage("Beacon copied to clipboard");
     }

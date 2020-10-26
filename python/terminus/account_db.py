@@ -13,11 +13,12 @@ from moneysocket.beacon.beacon import MoneysocketBeacon
 from moneysocket.beacon.shared_seed import SharedSeed
 
 from moneysocket.utl.bolt11 import Bolt11
+from moneysocket.wad.wad import Wad
 
 
 EMPTY_DB = {'account_name':  "",
-            'provider_uuid': "",
-            'msatoshis':     0,
+            'account_uuid':  "",
+            'wad':           None,
             'pending':       {},
             'shared_seeds':  [],
             'beacons':       []}
@@ -34,6 +35,7 @@ class AccountDb(object):
         self.make_exist(self.filename)
         logging.info("using account db: %s" % self.filename)
         self.db = self.read_json(self.filename)
+        self.db['wad'] = Wad.from_dict(self.db['wad'])
 
     ###########################################################################
 
@@ -64,7 +66,7 @@ class AccountDb(object):
             os.makedirs(dir_path)
         record = EMPTY_DB.copy()
         record['account_name'] = self.account_name
-        record['provider_uuid'] = str(uuid.uuid4())
+        record['account_uuid'] = str(uuid.uuid4())
         self.write_json(filename, record)
 
     def write_file(self, path, content):
@@ -112,18 +114,6 @@ class AccountDb(object):
         self.db['shared_seeds'].remove(shared_seed_str)
         self.persist()
 
-    def set_msatoshis(self, msatoshis):
-        self.db['msatoshis'] = msatoshis
-        self.persist()
-
-    def increment_msatoshis(self, msatoshi_delta):
-        self.db['msatoshis'] += msatoshi_delta
-        self.persist()
-
-    def decrement_msatoshis(self, msatoshi_delta):
-        self.db['msatoshis'] -= msatoshi_delta
-        self.persist()
-
     def add_pending(self, payment_hash, bolt11):
         self.db['pending'][payment_hash] = bolt11
         self.persist()
@@ -137,11 +127,8 @@ class AccountDb(object):
     def get_name(self):
         return self.db['account_name']
 
-    def get_provider_uuid(self):
-        return self.db['provider_uuid']
-
-    def get_msatoshis(self):
-        return self.db['msatoshis']
+    def get_account_uuid(self):
+        return self.db['account_uuid']
 
     def iter_shared_seeds(self):
         for ss in self.db['shared_seeds']:
@@ -163,6 +150,27 @@ class AccountDb(object):
 
     def get_pending(self):
         return list(self.iter_pending())
+
+    ###########################################################################
+
+    def set_wad(self, wad):
+        self.db['wad'] = wad
+        self.persist()
+
+    def get_wad(self):
+        return self.db['wad']
+
+    def subtract_wad(self, wad):
+        assert not wad['asset_stable'], "terminus is bitcoin only"
+        current_wad = self.get_wad()
+        new_wad = Wad.bitcoin(current_wad['msats'] - wad['msats'])
+        self.set_wad(new_wad)
+
+    def add_wad(self, wad):
+        assert not wad['asset_stable'], "terminus is bitcoin only"
+        current_wad = self.get_wad()
+        new_wad = Wad.bitcoin(current_wad['msats'] + wad['msats'])
+        self.set_wad(new_wad)
 
     ###########################################################################
 
