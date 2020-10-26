@@ -53,6 +53,6 @@ class TerminusNexus(ProtocolNexus):
 
     def notify_provider_info(self, shared_seed):
         pi = self.layer.stack.get_provider_info(shared_seed)
-        m = NotifyProvider(pi['provider_uuid'], payer=pi['payer'],
-                           payee=pi['payee'], msats=pi['msats'])
+        m = NotifyProvider(pi['account_uuid'], payer=pi['payer'],
+                           payee=pi['payee'], wad=pi['wad'])
         self.send(m)
