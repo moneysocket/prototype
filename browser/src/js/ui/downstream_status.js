@@ -56,8 +56,8 @@ class DownstreamStatusUi {
         DomUtl.drawText(this.ping_div,
                         "Ping: " + this.ping_time.toString() + "ms");
         if (this.provided_wad != null) {
-            DomUtl.drawText(this.balance_div,
-                "Provided: " + this.provided_wad.toString());
+            DomUtl.drawText(this.balance_div, "Provided: ")
+            DomUtl.drawWad(this.balance_div, this.provided_wad);
         } else {
             DomUtl.drawText(this.balance_div, "Provided: N/A");
         }
