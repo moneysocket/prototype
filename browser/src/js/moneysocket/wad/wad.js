@@ -127,9 +127,9 @@ class Wad {
         if (Object.keys(wad_dict).length != WAD_KEYS.size) {
             return "key mismatch";
         }
-        console.log(WAD_KEYS);
+        //console.log(WAD_KEYS);
         for (var key in wad_dict) {
-            console.log("key: " + key);
+           ///console.log("key: " + key);
             if (! (WAD_KEYS.has(key))) {
                 return "key set not consistent with wad dictionary";
             }
