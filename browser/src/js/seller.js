@@ -35,7 +35,7 @@ class SellerApp {
         this.consumer_stack = new ConsumerStack(this);
         this.consumer_ui = new ConnectUi(this.my_div, "Seller Wallet Consumer",
                                          this.consumer_stack);
-        this.provider_uuid = Uuid.uuidv4();
+        this.account_uuid = Uuid.uuidv4();
         this.provider_info = {'ready': false};
 
         this.seller_uuid = Uuid.uuidv4();
@@ -103,12 +103,12 @@ class SellerApp {
 
     consumerReportProviderInfoCb(provider_info) {
         var was_ready = this.provider_info['ready'];
-        this.provider_info = {'ready':         true,
-                              'payer':         false,
-                              'payee':         true,
-                              'msats':         null,
-                              'provider_uuid': this.provider_uuid};
-        this.seller_app_ui.balanceUpdateFromDownstream(provider_info['msats']);
+        this.provider_info = {'ready':        true,
+                              'payer':        false,
+                              'payee':        true,
+                              'wad':          null,
+                              'account_uuid': this.account_uuid};
+        this.seller_app_ui.balanceUpdateFromDownstream(provider_info['wad']);
         if (! was_ready) {
             this.seller_stack.providerNowReadyFromApp();
         }

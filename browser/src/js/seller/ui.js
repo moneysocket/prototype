@@ -15,7 +15,7 @@ class SellerUi {
         this.parent_div = div;
         this.my_div = null;
         this.opinion = "Bullish"
-        this.provider_msats = 0;
+        this.provider_wad = null;
 
         this.for_sale_div = null;
 
@@ -85,9 +85,9 @@ class SellerUi {
         this.downstream_ui.updatePingTime(msecs);
     }
 
-    balanceUpdateFromDownstream(msats) {
-        this.provider_msats = msats;
-        this.downstream_ui.updateProviderMsats(msats);
+    balanceUpdateFromDownstream(wad) {
+        this.provider_wad = wad;
+        this.downstream_ui.updateProviderWad(wad);
     }
 
     providerOnline() {
