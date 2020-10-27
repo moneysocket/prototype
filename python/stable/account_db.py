@@ -143,7 +143,7 @@ class AccountDb(object):
         return self.db['account_uuid']
 
     def get_msatoshis(self):
-        return self.db['msatoshis']
+        return self.db['wad']['msats']
 
     def iter_shared_seeds(self):
         for ss in self.db['shared_seeds']:
@@ -183,15 +183,14 @@ class AccountDb(object):
         return self.db['wad']
 
     def subtract_wad(self, wad):
-        assert not wad['asset_stable'], "terminus is bitcoin only"
         current_wad = self.get_wad()
-        new_wad = Wad.bitcoin(current_wad['msats'] - wad['msats'])
+        new_msats = current_wad['msats'] - wad['msats']
+        new_wad = current_wad.clone_msats(new_msats)
         self.set_wad(new_wad)
 
     def add_wad(self, wad):
-        assert not wad['asset_stable'], "terminus is bitcoin only"
-        current_wad = self.get_wad()
-        new_wad = Wad.bitcoin(current_wad['msats'] + wad['msats'])
+        new_msats = current_wad['msats'] + wad['msats']
+        new_wad = current_wad.clone_msats(new_msats)
         self.set_wad(new_wad)
 
     ###########################################################################

@@ -45,7 +45,7 @@ class StabledAssetPool():
 
     def select_paying_nexus_uuid(self, msats):
         for nexus_uuid, provider_info in self.assets.items():
-            if msats < provider_info['wad'].msats:
+            if msats < provider_info['wad']['msats']:
                 return nexus_uuid
         return None
 

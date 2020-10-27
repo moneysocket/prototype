@@ -162,13 +162,13 @@ class SellerApp {
 
     sellerRequestingOpinionInvoiceCb(item_id, request_uuid) {
         if (item_id == 'hello') {
-            this.consumer_stack.requestInvoice(11111, request_uuid,
+            this.consumer_stack.requestInvoice(1111111, request_uuid,
                                                "Hello World");
         } else if (item_id == 'time') {
-            this.consumer_stack.requestInvoice(22222, request_uuid,
+            this.consumer_stack.requestInvoice(2222222, request_uuid,
                                                "Current Timestamp");
         } else if (item_id == 'outlook') {
-            this.consumer_stack.requestInvoice(33333, request_uuid,
+            this.consumer_stack.requestInvoice(3333333, request_uuid,
                                                "Market Outlook");
         } else {
             console.error("unknown item_id");

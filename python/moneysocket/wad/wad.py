@@ -56,6 +56,8 @@ class Wad(dict):
             self['name'] = name
             self['symbol'] = symbol
 
+    ###########################################################################
+
     def __str__(self):
         return self.fmt_short()
 
@@ -77,6 +79,40 @@ class Wad(dict):
             return self.fmt_short()
         return "%s (%.3f sat)" % (self.fmt_short(),
                                   self['msats'] / MSAT_PER_SAT)
+
+    ###########################################################################
+
+    def getDefactoRate(self):
+        if self['msats'] == 0:
+            return None
+        if not self['asset_stable']:
+            return Rate('BTC', 'BTC', 1.0)
+        b = self['msats'] / MSATS_PER_BTC
+        r = self['asset_units'] / b
+        rate = Rate('BTC', self['code'], r)
+        return rate
+
+    def clone(self):
+        return Wad(self['msats'], self['asset_stable'], self['asset_units'],
+                   self['code'], self['countries'], self['decimals'],
+                   self['name'], self['symbol'])
+
+
+    def clone_msats(self, new_msats):
+        rate = self.getDefactoRate()
+        if rate == None:
+            c = Wad.clone(self)
+            c['msats'] = 0
+            c['asset_units'] = 0
+            return c
+        new_btc = new_msats / MSATS_PER_BTC;
+        other = rate.other('BTC')
+        new_units, code = rate.convert(new_btc, 'BTC')
+        return Wad(new_msats, self['asset_stable'], new_units,
+                   self['code'], self['countries'], self['decimals'],
+                   self['name'], self['symbol'])
+
+    ###########################################################################
 
     @staticmethod
     def validate_wad_dict(wad_dict):
