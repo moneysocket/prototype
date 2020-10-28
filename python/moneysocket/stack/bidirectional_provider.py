@@ -87,7 +87,9 @@ class BidirectionalProviderStack(object):
     ###########################################################################
 
     def connect(self, location, shared_seed):
-        return self.outgoing_websocket_layer.connect(location, shared_seed)
+        c = self.outgoing_websocket_layer.connect(location, shared_seed)
+        #print("connecting got: %s" % c)
+        return c
 
     def disconnect(self, shared_seed):
         self.outgoing_websocket_layer.disconnect(shared_seed)

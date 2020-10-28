@@ -28,7 +28,7 @@ class StabledCmdParse():
         parser_disconnectasset = subparsers.add_parser("disconnectasset")
         if app:
             parser_disconnectasset.set_defaults(cmd_func=app.disconnectasset)
-        parser_disconnectasset.add_argument("provider_uuid",
+        parser_disconnectasset.add_argument("beacon",
                                              help="asset beacon")
 
         parser_create = subparsers.add_parser("createstable")

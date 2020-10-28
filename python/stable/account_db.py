@@ -35,7 +35,7 @@ class AccountDb(object):
         self.filename = os.path.join(AccountDb.PERSIST_DIR,
                                      "%s.json" % account_name)
         self.make_exist(self.filename)
-        logging.info("using account db: %s" % self.filename)
+        #logging.info("using account db: %s" % self.filename)
         self.db = self.read_json(self.filename)
         self.db['wad'] = Wad.from_dict(self.db['wad'])
 
@@ -62,7 +62,7 @@ class AccountDb(object):
     def make_exist(self, filename):
         if os.path.exists(filename):
             return
-        logging.info("initializing new persitence db: %s" % self.filename)
+        logging.info("initializing new persitence db: %s" % filename)
         dir_path = os.path.dirname(filename)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)

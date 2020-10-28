@@ -100,3 +100,9 @@ class OutgoingWebsocketLayer(ProtocolLayer):
             return
         websocket_nexus = self.nexus_by_shared_seed[shared_seed]
         websocket_nexus.initiate_close()
+
+    def initiate_close_all(self):
+        for websocket_nexus in self.nexuses.values():
+            websocket_nexus.initiate_close()
+
+    ###########################################################################

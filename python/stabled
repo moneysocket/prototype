@@ -15,8 +15,9 @@ from twisted.internet import reactor
 from stable.rpc import StabledRpc
 from stable.app import StabledApp
 
-CONFIG_FILE = os.path.join(os.path.expanduser("~"),
-                           ".stabled/stabled.conf")
+CONFIG_DIR = os.path.join(os.path.expanduser("~"), ".stabled")
+
+CONFIG_FILE = os.path.join(CONFIG_DIR, "stabled.conf")
 
 if not os.path.exists(CONFIG_FILE):
     sys.exit("*** could not find %s" % CONFIG_FILE)
@@ -31,7 +32,7 @@ fmt = '%(asctime)s %(levelname)s: %(filename)s:%(lineno)d: %(message)s'
 datefmt = '%H:%M:%S'
 logging.basicConfig(format=fmt, datefmt=datefmt, level=logging.DEBUG)
 
-app = StabledApp(config)
+app = StabledApp(config, CONFIG_DIR)
 StabledRpc.APP = app
 
 app.run()
