@@ -93,7 +93,7 @@ class Account(object):
         self.db.set_wad(wad)
 
     def get_wad(self):
-        self.db.get_wad(wad)
+        return self.db.get_wad()
 
     def add_wad(self, wad):
         self.db.add_wad(wad)

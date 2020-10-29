@@ -112,6 +112,13 @@ class Wad(dict):
                    self['code'], self['countries'], self['decimals'],
                    self['name'], self['symbol'])
 
+    def adjust_msats_to_rate(self, rate):
+        assert rate['base_code'] == "BTC"
+        assert self['asset_stable']
+        btc, code = rate.convert(self['asset_units'], self['code'])
+        assert code == "BTC"
+        self['msats'] = round(btc * MSATS_PER_BTC)
+
     ###########################################################################
 
     @staticmethod

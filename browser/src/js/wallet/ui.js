@@ -164,6 +164,7 @@ class WalletUi {
     }
 
     balanceUpdateFromDownstream(wad) {
+        console.log("update from downstream " + wad['msats'])
         this.downstream_ui.updateProviderWad(wad);
         this.provider_wad = wad;
         this.updateProvideWad();

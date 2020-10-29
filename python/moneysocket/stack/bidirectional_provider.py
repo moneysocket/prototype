@@ -63,6 +63,9 @@ class BidirectionalProviderStack(object):
         self.transact_layer.notify_preimage(shared_seeds, preimage,
                                             request_reference_uuid)
 
+    def notify_provider_info(self, shared_seeds):
+        self.transact_layer.notify_provider_info(shared_seeds)
+
     ###########################################################################
 
     def announce_nexus_from_below_cb(self, transact_nexus):

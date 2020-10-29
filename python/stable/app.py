@@ -22,6 +22,8 @@ from stable.account import Account
 from stable.account_db import AccountDb
 from stable.directory import StableDirectory
 from stable.connect_db import ConnectDb
+from stable.rate_db import RateDb
+from stable.rate_update import RateUpdate
 
 
 class StabledAssetPool():
@@ -87,12 +89,13 @@ class StabledAssetPool():
             return None
         return random.choice(choices)
 
-    ###########################################################################
 
 class StabledApp():
     def __init__(self, config, config_dir):
         self.config = config
         self.connect_db = ConnectDb(config_dir)
+        self.rate_db = RateDb(config_dir)
+        self.rate_update = RateUpdate(self, self.rate_db)
         self.consumer_stack = OutgoingConsumerStack(self)
         self.provider_stack = BidirectionalProviderStack(config, self)
         self.asset_pool = StabledAssetPool()
@@ -137,7 +140,7 @@ class StabledApp():
         self.connect_db.add_beacon(beacon)
         connection_attempt = self.consumer_stack.do_connect(beacon)
         self.asset_pool.add_connection_attempt(beacon, connection_attempt)
-        return None
+        return "connected"
 
     def disconnectasset(self, parsed):
         print("app disconnect asset")
@@ -150,14 +153,18 @@ class StabledApp():
         self.asset_pool.remove_connection_attempt(beacon)
         # TODO - don't disconnect everything
         self.consumer_stack.do_disconnect()
-        return None
+        return "disconnected"
 
     def createstable(self, parsed):
         name = self.gen_account_name()
         print("generated: %s" % name)
-        rate_btcusd = Rate("BTC", parsed.asset, 12928.12)
 
-        wad = Wad.usd(float(parsed.amount), rate_btcusd)
+        code = parsed.asset
+        if not self.rate_db.has_rate("BTC", code):
+            return "*** don't have an exchange rate for %s" % code
+        rate = self.rate_db.get_rate("BTC", code)
+        wad = Wad.custom(float(parsed.amount), rate, code, None, None, None,
+                         None)
         account = Account(name)
         account.set_wad(wad)
         self.liabilities.add_account(account)
@@ -460,6 +467,23 @@ class StabledApp():
             'bolt11':                 bolt11,
             'asset_nexus_uuid':       asset_nexus_uuid}
 
+    ###########################################################################
+    # rate callback
+    ###########################################################################
+
+    def rate_change_cb(self, new_rate, code):
+        print("changed: %s" % code)
+        accounts = self.liabilities.lookup_by_currency_code(code)
+        print("accounts: %s" % accounts)
+        for account in accounts:
+            # adjust rate
+            wad = account.get_wad()
+            wad.adjust_msats_to_rate(new_rate)
+            account.set_wad(wad)
+            shared_seeds = account.get_all_shared_seeds()
+            print("shared seeds: %s" % shared_seeds)
+            self.provider_stack.notify_provider_info(shared_seeds)
+
 
     ###########################################################################
 
@@ -504,14 +528,17 @@ class StabledApp():
             account.prune_expired_paying()
             account.prune_expired_pending()
 
+
     ###########################################################################
 
     def run(self):
         self.load_persisted()
         self.provider_stack.listen()
+        self.rate_update.run()
 
         self.connect_loop = LoopingCall(self.retry_connections)
         self.connect_loop.start(5, now=False)
 
         self.prune_loop = LoopingCall(self.prune_expired_pending)
         self.prune_loop.start(3, now=False)
+
