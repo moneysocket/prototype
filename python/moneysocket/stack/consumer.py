@@ -91,8 +91,8 @@ class OutgoingConsumerStack(ConsumerStack):
         location = beacon.locations[0]
         shared_seed = beacon.get_shared_seed()
         if type(location) != WebsocketLocation:
-            return;
-        self.websocket_layer.connect(location, shared_seed)
+            return None;
+        return self.websocket_layer.connect(location, shared_seed)
 
     def do_disconnect(self):
         self.websocket_layer.initiate_close_all()

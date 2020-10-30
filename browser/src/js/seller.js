@@ -43,6 +43,8 @@ class SellerApp {
 
         this.requested_items = {};
         this.payment_hash_items = {};
+
+        this.seller_wad = null;
     }
 
 
@@ -66,6 +68,12 @@ class SellerApp {
     ///////////////////////////////////////////////////////////////////////////
 
     openStore() {
+        //console.log("h: " + this.seller_app_ui.hello_price +
+        //            " t: " + this.seller_app_ui.time_price +
+        //            " o: " + this.seller_app_ui.opinion_price);
+        this.getHelloMsatPrice();
+        this.getTimeMsatPrice();
+        this.getOpinionMsatPrice();
         this.store_open = true;
         this.seller_stack.sellerNowReadyFromApp();
     }
@@ -87,6 +95,45 @@ class SellerApp {
         }
     }
 
+    getHelloMsatPrice() {
+        if (this.seller_wad == null) {
+            return null;
+        }
+        var set_price = this.seller_app_ui.hello_price;
+        var rate = this.seller_wad.getDefactoRate();
+        var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
+        //console.log("hello btc: " +  btc);
+        var msats = Math.round(btc * (100000000.0 * 1000.0));
+        //console.log("hello msats: " +  msats);
+        return msats;
+    }
+
+    getTimeMsatPrice() {
+        if (this.seller_wad == null) {
+            return null;
+        }
+        var set_price = this.seller_app_ui.time_price;
+        var rate = this.seller_wad.getDefactoRate();
+        var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
+        //console.log("time btc: " +  btc);
+        var msats = Math.round(btc * (100000000.0 * 1000.0));
+        //console.log("time msats: " +  msats);
+        return msats;
+    }
+
+    getOpinionMsatPrice() {
+        if (this.seller_wad == null) {
+            return null;
+        }
+        var set_price = this.seller_app_ui.opinion_price;
+        var rate = this.seller_wad.getDefactoRate();
+        var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
+        //console.log("opinion btc: " +  btc);
+        var msats = Math.round(btc * (100000000.0 * 1000.0));
+        //console.log("opinion msats: " +  msats);
+        return msats;
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
@@ -96,6 +143,7 @@ class SellerApp {
     }
 
     consumerOfflineCb() {
+        this.seller_wad = null;
         this.provider_info = {'ready': false};
         this.seller_app_ui.consumerOffline();
         this.seller_stack.doDisconnect();
@@ -103,6 +151,7 @@ class SellerApp {
 
     consumerReportProviderInfoCb(provider_info) {
         var was_ready = this.provider_info['ready'];
+        this.seller_wad = provider_info['wad'];
         this.provider_info = {'ready':        true,
                               'payer':        false,
                               'payee':        true,
@@ -162,13 +211,15 @@ class SellerApp {
 
     sellerRequestingOpinionInvoiceCb(item_id, request_uuid) {
         if (item_id == 'hello') {
-            this.consumer_stack.requestInvoice(11111, request_uuid,
-                                               "Hello World");
+            this.consumer_stack.requestInvoice(this.getHelloMsatPrice(),
+                                               request_uuid, "Hello World");
         } else if (item_id == 'time') {
-            this.consumer_stack.requestInvoice(22222, request_uuid,
+            this.consumer_stack.requestInvoice(this.getTimeMsatPrice(),
+                                               request_uuid,
                                                "Current Timestamp");
         } else if (item_id == 'outlook') {
-            this.consumer_stack.requestInvoice(33333, request_uuid,
+            this.consumer_stack.requestInvoice(this.getOpinionMsatPrice(),
+                                               request_uuid,
                                                "Market Outlook");
         } else {
             console.error("unknown item_id");
@@ -184,15 +235,15 @@ class SellerApp {
                     'seller_uuid': this.seller_uuid,
                     'items': [{'item_id': 'hello',
                                'name':    'Hello World',
-                               'msats':   11111,
+                               'msats':   this.getHelloMsatPrice(),
                               },
                               {'item_id': 'time',
                                'name':    'Current Timestamp',
-                               'msats':   22222,
+                               'msats':   this.getTimeMsatPrice(),
                               },
                               {'item_id': 'outlook',
                                'name':    'Market Outlook',
-                               'msats':   33333,
+                               'msats':   this.getOpinionMsatPrice(),
                               },
                             ],
                    }

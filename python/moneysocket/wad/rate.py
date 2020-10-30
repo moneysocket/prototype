@@ -14,8 +14,11 @@ class Rate(dict):
         self['timestamp'] = timestamp if timestamp else time.time()
 
     def __str__(self):
-        return "%0.8f %s%s %s" % (self['rate_value'], self['base_code'],
-                                  self['quote_code'], self['timestamp'])
+        return "%0.8f %s%s" % (self['rate_value'], self['base_code'],
+                               self['quote_code'])
+
+    def key_str(self):
+        return "%s_%s" % (self['base_code'], self['quote_code'])
 
     def convert(self, value, value_code):
         if value_code == self['base_code']:
@@ -73,3 +76,8 @@ class Rate(dict):
         assert quote_check == quote_code
         timestamp = min(first['timestamp'], second['timestamp'])
         return Rate(base_code, quote_code, quote_converted, timestamp=timestamp)
+
+    @staticmethod
+    def from_dict(rate_dict):
+        return Rate(rate_dict['base_code'], rate_dict['quote_code'],
+                    rate_dict['rate_value'], rate_dict['timestamp'])

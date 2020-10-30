@@ -6,6 +6,9 @@ import random
 import uuid
 import logging
 
+
+from twisted.internet.task import LoopingCall
+
 from moneysocket.utl.bolt11 import Bolt11
 from moneysocket.stack.consumer import OutgoingConsumerStack
 from moneysocket.stack.bidirectional_provider import (
@@ -18,13 +21,21 @@ from moneysocket.wad.rate import Rate
 from stable.account import Account
 from stable.account_db import AccountDb
 from stable.directory import StableDirectory
+from stable.connect_db import ConnectDb
+from stable.rate_db import RateDb
+from stable.rate_update import RateUpdate
 
 
 class StabledAssetPool():
     def __init__(self):
         self.assets = {}
+        self.connection_attempts = {}
 
     def iter_lines(self):
+        yield "Connections:"
+        for beacon, ca in self.connection_attempts.items():
+            yield "\toutgoing beacon: %s" % beacon
+            yield "\t\tconnection attempt: %s" % str(ca)
         yield "Assets:"
         for info in self.assets.values():
             yield "\tuuid: %s" % info['account_uuid']
@@ -33,6 +44,8 @@ class StabledAssetPool():
 
     def __str__(self):
         return "\n".join(self.iter_lines())
+
+    ###########################################################################
 
     def add_asset(self, nexus_uuid, provider_info):
         # TODO transact layer to de-dupe nexuses with the same provider
@@ -43,9 +56,29 @@ class StabledAssetPool():
         # TODO - cli command
         return popped is not None
 
+    ###########################################################################
+
+    def add_connection_attempt(self, beacon, connection_attempt):
+        beacon_str = beacon.to_bech32_str()
+        self.connection_attempts[beacon_str] = connection_attempt
+
+    def remove_connection_attempt(self, beacon):
+        beacon_str = beacon.to_bech32_str()
+        del self.connection_attempts[beacon_str]
+
+
+    def get_disconnected_beacons(self):
+        dbs = []
+        for beacon_str, connection_attempt in self.connection_attempts.items():
+            if connection_attempt.get_state() == "disconnected":
+                dbs.append(MoneysocketBeacon.from_bech32_str(beacon_str)[0])
+        return dbs
+
+    ###########################################################################
+
     def select_paying_nexus_uuid(self, msats):
         for nexus_uuid, provider_info in self.assets.items():
-            if msats < provider_info['wad'].msats:
+            if msats < provider_info['wad']['msats']:
                 return nexus_uuid
         return None
 
@@ -58,8 +91,11 @@ class StabledAssetPool():
 
 
 class StabledApp():
-    def __init__(self, config):
+    def __init__(self, config, config_dir):
         self.config = config
+        self.connect_db = ConnectDb(config_dir)
+        self.rate_db = RateDb(config_dir)
+        self.rate_update = RateUpdate(self, self.rate_db)
         self.consumer_stack = OutgoingConsumerStack(self)
         self.provider_stack = BidirectionalProviderStack(config, self)
         self.asset_pool = StabledAssetPool()
@@ -70,6 +106,8 @@ class StabledApp():
         self.invoice_requests = {}
         self.pay_requests = {}
 
+        self.connect_loop = None
+        self.prune_loop = None
 
     ###########################################################################
 
@@ -88,8 +126,8 @@ class StabledApp():
     def getinfo(self, parsed):
         locations = self.provider_stack.get_listen_locations()
         print("app getinfo")
-        s = str(self.asset_pool) + "\nAccounts:\n"
-        for a in Account.iter_persisted_accounts():
+        s = str(self.rate_db) + "\n" + str(self.asset_pool) + "\nAccounts:\n"
+        for a in self.liabilities.iter_accounts():
             s += a.summary_string(locations) + "\n"
         return s
 
@@ -98,24 +136,43 @@ class StabledApp():
         beacon, err = MoneysocketBeacon.from_bech32_str(parsed.beacon)
         if err:
             return err
-        self.consumer_stack.do_connect(beacon)
-        return None
+
+        self.connect_db.add_beacon(beacon)
+        connection_attempt = self.consumer_stack.do_connect(beacon)
+        self.asset_pool.add_connection_attempt(beacon, connection_attempt)
+        return "connected"
 
     def disconnectasset(self, parsed):
         print("app disconnect asset")
-        return None
+        beacon, err = MoneysocketBeacon.from_bech32_str(parsed.beacon)
+        if err:
+            return err
+        if not self.connect_db.has_beacon(beacon):
+            return "beacon not known"
+        self.connect_db.remove_beacon(beacon)
+        self.asset_pool.remove_connection_attempt(beacon)
+        # TODO - don't disconnect everything
+        self.consumer_stack.do_disconnect()
+        return "disconnected"
 
     def createstable(self, parsed):
         name = self.gen_account_name()
         print("generated: %s" % name)
-        rate_btcusd = Rate("BTC", parsed.asset, 12928.12)
 
-        wad = Wad.usd(float(parsed.amount), rate_btcusd)
+        code = parsed.asset
+        if not self.rate_db.has_rate("BTC", code):
+            return "*** don't have an exchange rate for %s" % code
+        rate = self.rate_db.get_rate("BTC", code)
+        if self.rate_db.has_symbol(code):
+            symbol = self.rate_db.get_symbol(code)
+        else:
+            symbol = ""
+        wad = Wad.custom(float(parsed.amount), rate, code, None, 2, code,
+                         symbol)
         account = Account(name)
         account.set_wad(wad)
         self.liabilities.add_account(account)
         return "created account: %s  wad: %s" % (name, wad)
-
 
     def create(self, parsed):
         name = self.gen_account_name()
@@ -217,6 +274,35 @@ class StabledApp():
         account.depersist()
         return "removed: %s" % name
 
+    def createpegged(self, parsed):
+        print("symbol: %s" % parsed.symbol)
+        print("code: %s" % parsed.code)
+        print("peg_amount: %s" % parsed.peg_amount)
+        print("pegged_to_code: %s" % parsed.pegged_to_code)
+        symbol = parsed.symbol
+        code = parsed.code
+        peg_amount = float(parsed.peg_amount)
+        pegged_to_code = parsed.pegged_to_code
+        if not self.rate_db.has_rate("BTC", pegged_to_code):
+            return "*** do not have BTC rate for %s" % pegged_to_code
+
+        if self.rate_db.has_pegged(code):
+            return "*** already tracking code %s" % code
+
+        peg_rate = Rate(code, pegged_to_code, float(peg_amount))
+        print("peg_rate: %s" % peg_rate)
+        self.rate_db.add_symbol(code, symbol)
+        self.rate_db.add_pegged(peg_rate)
+        return None
+
+    def rmpegged(self, parsed):
+        print("code: %s" % parsed.code)
+        if not self.rate_db.has_pegged(parsed.code):
+            return "*** not pegged: %s" % parsed.code
+        err = self.rate_db.rm_pegged(parsed.code, parsed.pegged_to_code)
+        return err
+
+
     ###########################################################################
     # consumer stack callbacks
     ###########################################################################
@@ -227,6 +313,7 @@ class StabledApp():
 
     def consumer_offline_cb(self, nexus):
         print("consumer offline")
+        self.asset_pool.forget_asset(nexus.uuid)
 
     def consumer_report_provider_info_cb(self, nexus, provider_info):
         print("provider info: %s" % provider_info)
@@ -413,9 +500,38 @@ class StabledApp():
             'bolt11':                 bolt11,
             'asset_nexus_uuid':       asset_nexus_uuid}
 
+    ###########################################################################
+    # rate callback
+    ###########################################################################
+
+    def rate_change_cb(self, new_rate, code):
+        print("changed: %s" % code)
+
+        accounts = self.liabilities.lookup_by_currency_code(code)
+        for account in accounts:
+            wad = account.get_wad()
+            wad.adjust_msats_to_rate(new_rate)
+            account.set_wad(wad)
+            shared_seeds = account.get_all_shared_seeds()
+            self.provider_stack.notify_provider_info(shared_seeds)
+
+        self.rate_db.recalc_pegged()
+        pegged_codes = self.rate_db.get_pegs_of(code)
+        #print(pegged_codes)
+        for pegged_code in pegged_codes:
+            accounts = self.liabilities.lookup_by_currency_code(pegged_code)
+            #print(accounts)
+            new_rate = self.rate_db.get_rate("BTC", pegged_code)
+            for account in accounts:
+                wad = account.get_wad()
+                wad.adjust_msats_to_rate(new_rate)
+                account.set_wad(wad)
+                shared_seeds = account.get_all_shared_seeds()
+                self.provider_stack.notify_provider_info(shared_seeds)
+
 
     ###########################################################################
-    # run
+    # lifecycle stuff
     ###########################################################################
 
     def load_persisted(self):
@@ -431,6 +547,45 @@ class StabledApp():
             for shared_seed in account.get_shared_seeds():
                 self.provider_stack.local_connect(shared_seed)
 
+        for beacon in self.connect_db.get_asset_beacons():
+            connection_attempt = self.consumer_stack.do_connect(beacon)
+            self.asset_pool.add_connection_attempt(beacon, connection_attempt)
+
+
+    ###########################################################################
+
+    def retry_connections(self):
+        for account in self.liabilities.iter_accounts():
+            disconnected_beacons = account.get_disconnected_beacons()
+            for beacon in disconnected_beacons:
+                #logging.error("disconnected: %s" % beacon.to_bech32_str())
+                location = beacon.locations[0]
+                assert location.to_dict()['type'] == "WebSocket"
+                shared_seed = beacon.shared_seed
+                connection_attempt = self.provider_stack.connect(location,
+                                                                 shared_seed)
+                account.add_connection_attempt(beacon, connection_attempt)
+
+        for beacon in self.asset_pool.get_disconnected_beacons():
+            connection_attempt = self.consumer_stack.do_connect(beacon)
+            self.asset_pool.add_connection_attempt(beacon, connection_attempt)
+
+    def prune_expired_pending(self):
+        for account in self.liabilities.iter_accounts():
+            account.prune_expired_paying()
+            account.prune_expired_pending()
+
+
+    ###########################################################################
+
     def run(self):
         self.load_persisted()
         self.provider_stack.listen()
+        self.rate_update.run()
+
+        self.connect_loop = LoopingCall(self.retry_connections)
+        self.connect_loop.start(5, now=False)
+
+        self.prune_loop = LoopingCall(self.prune_expired_pending)
+        self.prune_loop.start(3, now=False)
+

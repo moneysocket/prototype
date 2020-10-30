@@ -2,6 +2,8 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
+import logging
+
 from moneysocket.protocol.nexus import ProtocolNexus
 from moneysocket.message.notification.invoice import NotifyInvoice
 from moneysocket.message.notification.preimage import NotifyPreimage
@@ -45,6 +47,7 @@ class ProviderTransactNexus(ProtocolNexus):
 
     def notify_provider_info(self, shared_seed):
         pi = self.layer.stack.get_provider_info(shared_seed)
-        m = NotifyProvider(pi['provider_uuid'], payer=pi['payer'],
-                           payee=pi['payee'], msats=pi['msats'])
+        logging.info("NOYIFY PROVIDER: %s" % pi['wad'])
+        m = NotifyProvider(pi['account_uuid'], payer=pi['payer'],
+                           payee=pi['payee'], wad=pi['wad'])
         self.send(m)

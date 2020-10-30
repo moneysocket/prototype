@@ -50,6 +50,10 @@ class StableDirectory(object):
         return {self.accounts[name] for name in
                 self.accounts_by_paying_payment_hash[payment_hash]}
 
+    def lookup_by_currency_code(self, code):
+        return [a for a in self.accounts.values() if
+                a.get_wad()['code'] == code]
+
     def add_account(self, account):
         name = account.get_name()
         self.accounts[name] = account

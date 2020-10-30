@@ -82,10 +82,11 @@ class BuyerUi {
         }
     }
 
+
     displayItemsForSale(items) {
         for (var i = 0; i < items.length; i++) {
-            var sats = items[i]['msats'] / 1000.0;
-            var label = items[i]['name'] + ": " + sats + "sats";
+            var wad = Wad.clone_msats(this.available_wad, items[i]['msats']);
+            var label = items[i]['name'] + ": " + wad.toString();
             let item_id = items[i]['item_id'];
             DomUtl.drawButton(this.buttons_div, label,
                 (function() {

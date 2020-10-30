@@ -28,7 +28,7 @@ class StabledCmdParse():
         parser_disconnectasset = subparsers.add_parser("disconnectasset")
         if app:
             parser_disconnectasset.set_defaults(cmd_func=app.disconnectasset)
-        parser_disconnectasset.add_argument("provider_uuid",
+        parser_disconnectasset.add_argument("beacon",
                                              help="asset beacon")
 
         parser_create = subparsers.add_parser("createstable")
@@ -75,5 +75,25 @@ class StabledCmdParse():
                                help="account to remove")
         if app:
             parser_rm.set_defaults(cmd_func=app.rm)
+
+        parser_createpegged = subparsers.add_parser("createpegged")
+        parser_createpegged.add_argument("symbol", type=str,
+            help="symbol to use for pegged asset")
+        parser_createpegged.add_argument("code", type=str,
+            help="code to use for the pegged asset")
+        parser_createpegged.add_argument("peg_amount", type=str,
+            help="currency amount to peg")
+        parser_createpegged.add_argument("pegged_to_code", type=str,
+            help="currency code to peg this against")
+        if app:
+            parser_createpegged.set_defaults(cmd_func=app.createpegged)
+
+        parser_rmpegged = subparsers.add_parser("rmpegged")
+        parser_rmpegged.add_argument("code", type=str,
+            help="pegged asset to remove")
+        parser_rmpegged.add_argument("pegged_to_code", type=str,
+            help="currency code pegged against")
+        if app:
+            parser_rmpegged.set_defaults(cmd_func=app.rmpegged)
 
         return parser

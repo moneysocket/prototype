@@ -144,8 +144,7 @@ class WalletUi {
         var msats = this.provider_wad.msats;
         var asset_units = this.provider_wad.asset_units;
         new_provide.msats = Math.round(msats * (this.slider_val / 100))
-        new_provide.asset_units = Math.round(
-            asset_units * (this.slider_val / 100))
+        new_provide.asset_units = asset_units * (this.slider_val / 100)
         this.provide_wad = new_provide;
         DomUtl.deleteChildren(this.balance_div);
         DomUtl.drawBigWad(this.balance_div, this.provide_wad);
@@ -165,6 +164,7 @@ class WalletUi {
     }
 
     balanceUpdateFromDownstream(wad) {
+        console.log("update from downstream " + wad['msats'])
         this.downstream_ui.updateProviderWad(wad);
         this.provider_wad = wad;
         this.updateProvideWad();

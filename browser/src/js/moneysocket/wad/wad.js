@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
+const Rate = require("./rate.js").Rate;
+
 const FIAT = require("./fiat.js").FIAT;
 const CRYPTOCURRENCY = require("./cryptocurrency.js").CRYPTOCURRENCY;
 
@@ -111,8 +113,46 @@ class Wad {
 
     ///////////////////////////////////////////////////////////////////////////
 
+    getDefactoRate() {
+        if (this.msats == 0) {
+            return null;
+        }
+        if (! this.asset_stable) {
+            return new Rate('BTC', 'BTC', 1.0, null);
+        }
+        var b = (this.msats / MSATS_PER_BTC);
+        var r = this.asset_units / b;
+        var rate = new Rate('BTC', this.code, r, null);
+        return rate;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
     static clone(wad) {
         return new Wad(wad['msats'], wad['asset_stable'], wad['asset_units'],
+                       wad['code'], wad['countries'], wad['decimals'],
+                       wad['name'], wad['symbol'])
+    }
+
+    static clone_msats(wad, new_msats) {
+        var rate = wad.getDefactoRate();
+        console.log("rate: " + rate.toString());
+        console.log("new_msats " + new_msats);
+        if (rate == null) {
+            var c = Wad.clone(wad);
+            c['msats'] = 0;
+            c['asset_units'] = 0;
+            return c;
+        }
+        var new_btc = new_msats / MSATS_PER_BTC;
+        var other = rate.other('BTC');
+        console.log("other " + other);
+        console.log("new btc " + new_btc);
+        var [new_units, code] = rate.convert(new_btc, 'BTC');
+        console.assert(other == code);
+        console.log("new_units " + new_units);
+        console.log("code " + code);
+        return new Wad(new_msats, wad['asset_stable'], new_units,
                        wad['code'], wad['countries'], wad['decimals'],
                        wad['name'], wad['symbol'])
     }

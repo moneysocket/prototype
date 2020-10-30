@@ -48,13 +48,6 @@ class ProviderTransactLayer(ProtocolLayer):
         nexus = self.nexuses[nexus_uuid]
         nexus.notify_invoice(bolt11, request_reference_uuid)
 
-    def notify_preimage(self, nexus_uuid, preimage, request_reference_uuid):
-        if nexus_uuid not in self.nexuses:
-            print("no nexus with uuid? %s" % nexus_uuid)
-            return
-        nexus = self.nexuses[nexus_uuid]
-        nexus.notify_preimage(preimage, request_reference_uuid)
-
     def notify_preimage(self, shared_seeds, preimage, request_reference_uuid):
         # TODO figure out what nexus matches shared seed
         # have it pass along notify preimage
@@ -65,4 +58,12 @@ class ProviderTransactLayer(ProtocolLayer):
             for nexus_uuid in self.nexuses_by_shared_seed[shared_seed]:
                 nexus = self.nexuses[nexus_uuid]
                 nexus.notify_preimage(preimage, request_reference_uuid)
+                nexus.notify_provider_info(shared_seed)
+
+    def notify_provider_info(self, shared_seeds):
+        for shared_seed in shared_seeds:
+            if shared_seed not in self.nexuses_by_shared_seed:
+                continue
+            for nexus_uuid in self.nexuses_by_shared_seed[shared_seed]:
+                nexus = self.nexuses[nexus_uuid]
                 nexus.notify_provider_info(shared_seed)
