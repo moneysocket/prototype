@@ -297,9 +297,10 @@ class StabledApp():
 
     def rmpegged(self, parsed):
         print("code: %s" % parsed.code)
-        if not self.rate_db.has_pegged(code):
-            return "*** not pegged: %s" % code
-        return None
+        if not self.rate_db.has_pegged(parsed.code):
+            return "*** not pegged: %s" % parsed.code
+        err = self.rate_db.rm_pegged(parsed.code, parsed.pegged_to_code)
+        return err
 
 
     ###########################################################################

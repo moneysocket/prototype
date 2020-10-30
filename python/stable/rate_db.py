@@ -124,12 +124,14 @@ class RateDb():
             derived_rate = Rate.derive(rate['base_code'], 'BTC', rates)
             self.add_rate(derived_rate)
 
-    def rm_pegged(self, rate):
-        del self.db['pegged'][rate.key_str()]
-        inv = rate.invert()
-        del self.db['pegged'][inv.key_str()]
-
+    def rm_pegged(self, base_code, quote_code):
+        key = base_code + "_" + quote_code
+        if key not in self.db['pegged']:
+            return "unknown peg: %s" % key
+        del self.db['pegged'][key]
+        self.persist()
         # TODO remove derived from 'rates' dict
+        return None
 
     def has_pegged(self, code):
         for key in self.db['pegged'].keys():
