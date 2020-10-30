@@ -189,6 +189,7 @@ class AccountDb(object):
         self.set_wad(new_wad)
 
     def add_wad(self, wad):
+        current_wad = self.get_wad()
         new_msats = current_wad['msats'] + wad['msats']
         new_wad = current_wad.clone_msats(new_msats)
         self.set_wad(new_wad)
