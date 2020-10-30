@@ -23,11 +23,11 @@ class SellerUi {
         console.assert(typeof this.app.closeStore == 'function');
 
         this.hello_input = null;
-        this.hello_price = 0.1;
+        this.hello_price = 0.01;
         this.time_input = null;
-        this.time_price = 0.2;
+        this.time_price = 0.02;
         this.opinion_input = null;
-        this.opinion_price = 0.3;
+        this.opinion_price = 0.03;
     }
 
     draw(style) {
