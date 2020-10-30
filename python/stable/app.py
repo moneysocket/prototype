@@ -167,7 +167,7 @@ class StabledApp():
             symbol = self.rate_db.get_symbol(code)
         else:
             symbol = ""
-        wad = Wad.custom(float(parsed.amount), rate, code, None, 2, None,
+        wad = Wad.custom(float(parsed.amount), rate, code, None, 2, code,
                          symbol)
         account = Account(name)
         account.set_wad(wad)
