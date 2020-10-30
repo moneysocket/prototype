@@ -41,4 +41,9 @@ class StabledRpc(jsonrpc.JSONRPC):
     def jsonrpc_rm(self, argv):
         return self.exec_cmd('rm', argv)
 
+    def jsonrpc_createpegged(self, argv):
+        return self.exec_cmd('createpegged', argv)
+
+    def jsonrpc_rmpegged(self, argv):
+        return self.exec_cmd('createpegged', argv)
 

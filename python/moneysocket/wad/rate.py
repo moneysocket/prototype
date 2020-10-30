@@ -14,8 +14,8 @@ class Rate(dict):
         self['timestamp'] = timestamp if timestamp else time.time()
 
     def __str__(self):
-        return "%0.8f %s%s %s" % (self['rate_value'], self['base_code'],
-                                  self['quote_code'], self['timestamp'])
+        return "%0.8f %s%s" % (self['rate_value'], self['base_code'],
+                               self['quote_code'])
 
     def key_str(self):
         return "%s_%s" % (self['base_code'], self['quote_code'])

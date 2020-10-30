@@ -126,7 +126,7 @@ class StabledApp():
     def getinfo(self, parsed):
         locations = self.provider_stack.get_listen_locations()
         print("app getinfo")
-        s = str(self.asset_pool) + "\nAccounts:\n"
+        s = str(self.rate_db) + "\n" + str(self.asset_pool) + "\nAccounts:\n"
         for a in self.liabilities.iter_accounts():
             s += a.summary_string(locations) + "\n"
         return s
@@ -163,8 +163,12 @@ class StabledApp():
         if not self.rate_db.has_rate("BTC", code):
             return "*** don't have an exchange rate for %s" % code
         rate = self.rate_db.get_rate("BTC", code)
-        wad = Wad.custom(float(parsed.amount), rate, code, None, None, None,
-                         None)
+        if self.rate_db.has_symbol(code):
+            symbol = self.rate_db.get_symbol(code)
+        else:
+            symbol = ""
+        wad = Wad.custom(float(parsed.amount), rate, code, None, 2, None,
+                         symbol)
         account = Account(name)
         account.set_wad(wad)
         self.liabilities.add_account(account)
@@ -269,6 +273,34 @@ class StabledApp():
         self.liabilities.remove_account(account)
         account.depersist()
         return "removed: %s" % name
+
+    def createpegged(self, parsed):
+        print("symbol: %s" % parsed.symbol)
+        print("code: %s" % parsed.code)
+        print("peg_amount: %s" % parsed.peg_amount)
+        print("pegged_to_code: %s" % parsed.pegged_to_code)
+        symbol = parsed.symbol
+        code = parsed.code
+        peg_amount = float(parsed.peg_amount)
+        pegged_to_code = parsed.pegged_to_code
+        if not self.rate_db.has_rate("BTC", pegged_to_code):
+            return "*** do not have BTC rate for %s" % pegged_to_code
+
+        if self.rate_db.has_pegged(code):
+            return "*** already tracking code %s" % code
+
+        peg_rate = Rate(code, pegged_to_code, float(peg_amount))
+        print("peg_rate: %s" % peg_rate)
+        self.rate_db.add_symbol(code, symbol)
+        self.rate_db.add_pegged(peg_rate)
+        return None
+
+    def rmpegged(self, parsed):
+        print("code: %s" % parsed.code)
+        if not self.rate_db.has_pegged(code):
+            return "*** not pegged: %s" % code
+        return None
+
 
     ###########################################################################
     # consumer stack callbacks
@@ -473,18 +505,32 @@ class StabledApp():
 
     def rate_change_cb(self, new_rate, code):
         print("changed: %s" % code)
+
         accounts = self.liabilities.lookup_by_currency_code(code)
-        print("accounts: %s" % accounts)
         for account in accounts:
-            # adjust rate
             wad = account.get_wad()
             wad.adjust_msats_to_rate(new_rate)
             account.set_wad(wad)
             shared_seeds = account.get_all_shared_seeds()
-            print("shared seeds: %s" % shared_seeds)
             self.provider_stack.notify_provider_info(shared_seeds)
 
+        self.rate_db.recalc_pegged()
+        pegged_codes = self.rate_db.get_pegs_of(code)
+        #print(pegged_codes)
+        for pegged_code in pegged_codes:
+            accounts = self.liabilities.lookup_by_currency_code(pegged_code)
+            #print(accounts)
+            new_rate = self.rate_db.get_rate("BTC", pegged_code)
+            for account in accounts:
+                wad = account.get_wad()
+                wad.adjust_msats_to_rate(new_rate)
+                account.set_wad(wad)
+                shared_seeds = account.get_all_shared_seeds()
+                self.provider_stack.notify_provider_info(shared_seeds)
 
+
+    ###########################################################################
+    # lifecycle stuff
     ###########################################################################
 
     def load_persisted(self):
