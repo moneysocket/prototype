@@ -49,6 +49,7 @@ class BuyerLayer extends ProtocolLayer {
     }
 
     gotSellerCb(buyer_nexus, seller_info) {
+        console.log("got seller info");
         this.stack.gotSellerCb(buyer_nexus, seller_info);
     }
 

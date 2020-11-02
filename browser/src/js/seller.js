@@ -71,9 +71,9 @@ class SellerApp {
         //console.log("h: " + this.seller_app_ui.hello_price +
         //            " t: " + this.seller_app_ui.time_price +
         //            " o: " + this.seller_app_ui.opinion_price);
-        this.getHelloMsatPrice();
-        this.getTimeMsatPrice();
-        this.getOpinionMsatPrice();
+        //this.getHelloMsatPrice();
+        //this.getTimeMsatPrice();
+        //this.getOpinionMsatPrice();
         this.store_open = true;
         this.seller_stack.sellerNowReadyFromApp();
     }
@@ -81,6 +81,13 @@ class SellerApp {
     closeStore() {
         this.store_open = false;
         this.seller_stack.doDisconnect();
+    }
+
+    updatePrices() {
+        //this.getHelloMsatPrice();
+        //this.getTimeMsatPrice();
+        //this.getOpinionMsatPrice();
+        this.seller_stack.updatePrices();
     }
 
     getItem(item_id) {
@@ -104,7 +111,7 @@ class SellerApp {
         var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
         //console.log("hello btc: " +  btc);
         var msats = Math.round(btc * (100000000.0 * 1000.0));
-        //console.log("hello msats: " +  msats);
+        console.log("hello msats: " +  msats);
         return msats;
     }
 
@@ -117,7 +124,7 @@ class SellerApp {
         var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
         //console.log("time btc: " +  btc);
         var msats = Math.round(btc * (100000000.0 * 1000.0));
-        //console.log("time msats: " +  msats);
+        console.log("time msats: " +  msats);
         return msats;
     }
 
@@ -130,7 +137,7 @@ class SellerApp {
         var [btc, code] = rate.convert(set_price, this.seller_wad['code']);
         //console.log("opinion btc: " +  btc);
         var msats = Math.round(btc * (100000000.0 * 1000.0));
-        //console.log("opinion msats: " +  msats);
+        console.log("opinion msats: " +  msats);
         return msats;
     }
 
