@@ -84,6 +84,7 @@ class BuyerUi {
 
 
     displayItemsForSale(items) {
+        DomUtl.deleteChildren(this.buttons_div);
         for (var i = 0; i < items.length; i++) {
             var wad = Wad.clone_msats(this.available_wad, items[i]['msats']);
             var label = items[i]['name'] + ": " + wad.toString();

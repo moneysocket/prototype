@@ -101,6 +101,10 @@ class SellerNexus extends ProtocolNexus {
 
     ///////////////////////////////////////////////////////////////////////////
 
+    updatePrices() {
+        this.notifySeller();
+    }
+
     sellerNowReady() {
         this.notifySeller();
         this.seller_finished_cb(this);

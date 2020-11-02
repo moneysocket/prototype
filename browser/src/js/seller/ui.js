@@ -34,6 +34,8 @@ class SellerUi {
         this.my_div = document.createElement("div");
         this.my_div.setAttribute("class", style);
 
+        this.balance_div = DomUtl.emptyDiv(this.my_div);
+
         this.opinion_div = DomUtl.emptyDiv(this.my_div);
         this.updateCurrentOpinion(this.opinion);
 
@@ -133,8 +135,9 @@ class SellerUi {
     updateCurrentOpinion(opinion) {
         this.opinion = opinion;
         DomUtl.deleteChildren(this.opinion_div);
-        DomUtl.drawText(this.opinion_div, "Current Opinion: ");
-        DomUtl.drawBigText(this.opinion_div, opinion);
+        var div = DomUtl.emptyDiv(this.opinion_div);
+        DomUtl.drawText(div, "Current Opinion: ");
+        DomUtl.drawBigText(div, opinion);
     }
 
     openStore() {
@@ -143,6 +146,9 @@ class SellerUi {
         this.time_price = t;
         this.opinion_price = o;
         DomUtl.deleteChildren(this.for_sale_div);
+        this.drawPriceTable(this.for_sale_div);
+        DomUtl.drawButton(this.for_sale_div, "Update Prices",
+            (function() {this.updatePrices()}).bind(this));
         DomUtl.drawButton(this.for_sale_div, "Close Store",
             (function() {this.closeStore()}).bind(this));
         this.app.openStore();
@@ -153,15 +159,20 @@ class SellerUi {
         DomUtl.deleteChildren(this.for_sale_div);
 
 
-        //var t = DomUtl.drawText(this.for_sale_div, "Hello:");
-        //t.setAttribute("style", "padding:1px;");
-        //this.drawPriceInput(this.for_sale_div, "Hello", "0.1");
-
         this.drawPriceTable(this.for_sale_div);
 
         DomUtl.drawButton(this.for_sale_div, "Open Store",
             (function() {this.openStore()}).bind(this));
         this.app.closeStore();
+    }
+
+    updatePrices() {
+        var [h, t, o] = this.getPriceSettings();
+        this.hello_price = h;
+        this.time_price = t;
+        this.opinion_price = o;
+        console.info("update prices");
+        return this.app.updatePrices();
     }
 
     getCurrentOpinion() {
@@ -175,6 +186,8 @@ class SellerUi {
     balanceUpdateFromDownstream(wad) {
         this.provider_wad = wad;
         this.downstream_ui.updateProviderWad(wad);
+        DomUtl.deleteChildren(this.balance_div);
+        DomUtl.drawBigWad(this.balance_div, this.provider_wad);
     }
 
     providerOnline() {
