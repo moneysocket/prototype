@@ -17,21 +17,24 @@ class OutgoingSocket {
         this.uuid = Uuid.uuidv4();
 
         var ws_url = websocket_location.toWsUrl();
+        this.websocket = this.setupWebsocket(ws_url);
+    }
 
-        this.websocket = new WebSocket(ws_url);
-
-        this.websocket.onmessage = (function(event) {
+    setupWebsocket(ws_url) {
+        var w = new WebSocket(ws_url);
+        w.onmessage = (function(event) {
             this.handleMessage(event);
         }).bind(this);
-        this.websocket.onopen = (function(event) {
+        w.onopen = (function(event) {
             this.handleOpen(event);
         }).bind(this);
-        this.websocket.onclose = (function(event) {
+        w.onclose = (function(event) {
             this.handleClose(event);
         }).bind(this);
-        this.websocket.onerror = (function(error) {
+        w.onerror = (function(error) {
             this.handleError(error);
         }).bind(this);
+        return w;
     }
 
     async handleMessage(event) {
