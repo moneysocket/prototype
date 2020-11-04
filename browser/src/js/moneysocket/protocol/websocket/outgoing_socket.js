@@ -29,8 +29,8 @@ class OutgoingSocket {
         this.websocket.onclose = (function(event) {
             this.handleClose(event);
         }).bind(this);
-        this.websocket.onerror = (function(event) {
-            this.handleError(event);
+        this.websocket.onerror = (function(error) {
+            this.handleError(error);
         }).bind(this);
     }
 
@@ -64,8 +64,8 @@ class OutgoingSocket {
         this.layer.revokeNexusFromBelowCb(this);
     }
 
-    handleError(event) {
-        console.log("error event: " + event);
+    handleError(error) {
+        console.log("error: " + error);
     }
 
     ///////////////////////////////////////////////////////////////////////////
