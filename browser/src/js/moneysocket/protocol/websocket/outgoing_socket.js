@@ -29,6 +29,9 @@ class OutgoingSocket {
         this.websocket.onclose = (function(event) {
             this.handleClose(event);
         }).bind(this);
+        this.websocket.onerror = (function(event) {
+            this.handleError(event);
+        }).bind(this);
     }
 
     async handleMessage(event) {
@@ -59,6 +62,10 @@ class OutgoingSocket {
         console.log("event.reason: " + event.reason);
         console.log("event.wasClean: " + event.wasClean);
         this.layer.revokeNexusFromBelowCb(this);
+    }
+
+    handleError(event) {
+        console.log("error event: " + event);
     }
 
     ///////////////////////////////////////////////////////////////////////////
