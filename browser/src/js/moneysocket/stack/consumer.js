@@ -14,17 +14,15 @@ const ConsumerTransactLayer = require(
     "../protocol/transact/consumer_layer.js").ConsumerTransactLayer;
 
 class ConsumerStack {
-    constructor(app) {
-        this.app = app;
+    constructor() {
 
-        console.assert(typeof app.consumerOnlineCb == 'function');
-        console.assert(typeof app.consumerOfflineCb == 'function');
-        console.assert(typeof app.consumerReportProviderInfoCb == 'function');
-        console.assert(typeof app.consumerReportPingCb == 'function');
-        console.assert(typeof app.consumerPostStackEventCb == 'function');
-
-        console.assert(typeof app.consumerReportBolt11Cb == 'function');
-        console.assert(typeof app.consumerReportPreimageCb == 'function');
+        this.onnexusonline = null;
+        this.onnexusoffline = null;
+        this.onproviderinfo = null;
+        this.onstackevent = null;
+        this.onping = null;
+        this.onbolt11 = null;
+        this.onpreimage = null;
 
         this.transact_layer = new ConsumerTransactLayer(this, this);
         this.consumer_layer = new ConsumerLayer(this, this.transact_layer);
@@ -40,11 +38,15 @@ class ConsumerStack {
     //////////////////////////////////////////////////////////////////////////
 
     notifyInvoiceCb(transact_nexus, bolt11, request_reference_uuid) {
-        this.app.consumerReportBolt11Cb(bolt11, request_reference_uuid);
+        if (this.onbolt11 != null) {
+            this.onbolt11(bolt11, request_reference_uuid);
+        }
     }
 
     notifyPreimageCb(transact_nexus, preimage, request_reference_uuid) {
-        this.app.consumerReportPreimageCb(preimage, request_reference_uuid);
+        if (this.onpreimage != null) {
+            this.onpreimage(preimage, request_reference_uuid);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -56,11 +58,15 @@ class ConsumerStack {
                              'payee':         msg['payee'],
                              'wad':           msg['wad'],
                              'account_uuid':  msg['account_uuid']};
-        this.app.consumerReportProviderInfoCb(provider_info);
+        if (this.onproviderinfo != null) {
+            this.onproviderinfo(provider_info);
+        }
     }
 
     notifyPingCb(consumer_nexus, msecs) {
-        this.app.consumerReportPingCb(msecs);
+        if (this.onping != null) {
+            this.onping(msecs);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -70,22 +76,26 @@ class ConsumerStack {
     announceNexusFromBelowCb(below_nexus) {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
-        //this.nexus.startPinging();
 
-        console.log("consumer stack got nexus");
-        this.app.consumerOnlineCb();
+        if (this.onnexusonline != null) {
+            this.onnexusonline(below_nexus);
+        }
     }
 
     revokeNexusFromBelowCb(below_nexus) {
         console.log("consumer stack got nexus revoked");
-        //this.nexus.stopPinging();
         this.nexus = null;
         this.shared_seed = null;
-        this.app.consumerOfflineCb();
+
+        if (this.onnexusoffline != null) {
+            this.onnexusoffline(below_nexus);
+        }
     }
 
     postLayerStackEventCb(layer_name, nexus, status) {
-        this.app.consumerPostStackEventCb(layer_name, status);
+        if (this.onstackevent != null) {
+            this.onstackevent(layer_name, nexus, status);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

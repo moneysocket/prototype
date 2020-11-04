@@ -15,16 +15,13 @@ const ProviderTransactLayer = require(
 
 
 class ProviderStack {
-    constructor(app, ui) {
-        this.app = app;
-        this.ui = ui;
-
-        console.assert(typeof app.providerOnlineCb == 'function');
-        console.assert(typeof app.providerOfflineCb == 'function');
-        console.assert(typeof app.providerPostStackEventCb == 'function');
-
-        console.assert(typeof app.providerRequestingInvoiceCb == 'function');
-        console.assert(typeof app.providerRequestingPayCb == 'function');
+    constructor() {
+        this.onnexusonline = null;
+        this.onnexusoffline = null;
+        this.onstackevent = null;
+        this.handleinvoicerequest = null;
+        this.handlepayrequest = null;
+        this.handleproviderinforequest = null;
 
         this.transact_layer = new ProviderTransactLayer(this, this);
         this.provider_layer = new ProviderLayer(this, this.transact_layer);
@@ -38,7 +35,8 @@ class ProviderStack {
     }
 
     getProviderInfo(shared_seed) {
-        return this.app.getProviderInfo();
+        console.assert(this.handleproviderinforequest != null);
+        return this.handleproviderinforequest();
     }
 
     providerNowReadyFromApp() {
@@ -61,38 +59,45 @@ class ProviderStack {
         console.log("provider stack got nexus");
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
-        this.app.providerOnlineCb();
+
+        if (this.onnnexusonline != null) {
+            this.onnexusonline(below_nexus);
+        }
     }
 
     revokeNexusFromBelowCb(below_nexus) {
         console.log("provider stack got nexus revoked");
         this.nexus = null;
         this.shared_seed = null;
-        this.app.providerOfflineCb();
+
+        if (this.onnnexusoffline != null) {
+            this.onnexusoffline(below_nexus);
+        }
     }
 
     postLayerStackEventCb(layer_name, nexus, status) {
-        this.app.providerPostStackEventCb(layer_name, status);
+        if (this.onstackevent != null) {
+            this.onstackevent(layer_name, nexus, status);
+        }
     }
 
-
     gotRequestInvoiceCb(msats, request_uuid) {
-        // connected consumer is asking for an invoice, hand to app,
-        this.app.providerRequestingInvoiceCb(msats, request_uuid);
+        if (this.handleinvoicerequest != null) {
+            this.handleinvoicerequest(mstats, request_uuid);
+        }
     }
 
     fulfilRequestInvoice(bolt11, request_reference_uuid) {
-        // a bolt11 has been provided from the app from previous request
         this.nexus.notifyInvoice(bolt11, request_reference_uuid);
     }
 
     gotRequestPayCb(bolt11, request_uuid) {
-        // connected consumer is asking for bolt11 to be paid, hand to app
-        this.app.providerRequestingPayCb(bolt11, request_uuid);
+        if (this.handlepayrequest != null) {
+            this.handlepayrequest(bolt11, request_uuid);
+        }
     }
 
     fulfilRequestPay(preimage, request_reference_uuid) {
-        // a preimage has been provided from the app from previous pay request
         this.nexus.notifyPreimage(preimage, request_reference_uuid);
     }
 
@@ -101,7 +106,7 @@ class ProviderStack {
     //////////////////////////////////////////////////////////////////////////
 
     doConnect(beacon) {
-        console.log("provider layer connect called");
+        //console.log("provider layer connect called");
 
         var location = beacon.locations[0];
         var shared_seed = beacon.getSharedSeed();
@@ -114,7 +119,7 @@ class ProviderStack {
     }
 
     doDisconnect() {
-        console.log("provider layer disconnect called");
+        //console.log("provider layer disconnect called");
         this.websocket_layer.initiateCloseAll();
     }
 }
