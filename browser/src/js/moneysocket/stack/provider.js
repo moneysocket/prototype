@@ -39,7 +39,7 @@ class ProviderStack {
     //////////////////////////////////////////////////////////////////////////
 
     setupProviderTransactLayer(above_layer) {
-        var l = new ProviderTransactLayer(this, above_layer);
+        var l = new ProviderTransactLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("PROVIDER_TRANSACT", nexus, status);
         }).bind(this);
@@ -53,7 +53,7 @@ class ProviderStack {
     }
 
     setupProviderLayer(above_layer) {
-        var l = new ProviderLayer(this, above_layer);
+        var l = new ProviderLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("PROVIDER", nexus, status);
         }).bind(this);
@@ -64,7 +64,7 @@ class ProviderStack {
     }
 
     setupOutgoingRendezvousLayer(above_layer) {
-        var l = new OutgoingRendezvousLayer(this, above_layer);
+        var l = new OutgoingRendezvousLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
@@ -72,7 +72,7 @@ class ProviderStack {
     }
 
     setupOutgoingWebsocketLayer(above_layer) {
-        var l = new OutgoingWebsocketLayer(this, above_layer);
+        var l = new OutgoingWebsocketLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);

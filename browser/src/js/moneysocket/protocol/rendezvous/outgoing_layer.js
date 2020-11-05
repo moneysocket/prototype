@@ -8,8 +8,8 @@ const OutgoingRendezvousNexus = require(
 
 
 class OutgoingRendezvousLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer);
+    constructor(above_layer) {
+        super(above_layer);
     }
 
     announceNexusFromBelowCb(below_nexus) {

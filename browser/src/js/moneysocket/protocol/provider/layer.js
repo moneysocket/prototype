@@ -8,8 +8,8 @@ const ProviderNexus = require("./nexus.js").ProviderNexus;
 
 
 class ProviderLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer);
+    constructor(above_layer) {
+        super(above_layer);
         this.handleproviderinforequest = null;
 
         this.waiting_for_app = {};

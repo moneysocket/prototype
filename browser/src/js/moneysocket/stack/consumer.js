@@ -40,7 +40,7 @@ class ConsumerStack {
     //////////////////////////////////////////////////////////////////////////
 
     setupConsumerTransactLayer(above_layer) {
-        var l = new ConsumerTransactLayer(this, above_layer);
+        var l = new ConsumerTransactLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
         }).bind(this);
@@ -54,7 +54,7 @@ class ConsumerStack {
     }
 
     setupConsumerLayer(above_layer) {
-        var l = new ConsumerLayer(this, above_layer);
+        var l = new ConsumerLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER", nexus, status);
         }).bind(this);
@@ -68,7 +68,7 @@ class ConsumerStack {
     }
 
     setupOutgoingRendezvousLayer(above_layer) {
-        var l = new OutgoingRendezvousLayer(this, above_layer);
+        var l = new OutgoingRendezvousLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
@@ -76,7 +76,7 @@ class ConsumerStack {
     }
 
     setupOutgoingWebsocketLayer(above_layer) {
-        var l = new OutgoingWebsocketLayer(this, above_layer);
+        var l = new OutgoingWebsocketLayer(above_layer);
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);

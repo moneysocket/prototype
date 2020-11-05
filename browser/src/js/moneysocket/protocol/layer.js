@@ -4,12 +4,8 @@
 
 
 class ProtocolLayer {
-    constructor(stack, above_layer) {
-        this.stack = stack;
-
+    constructor(above_layer) {
         this.onlayerevent = null;
-        //console.assert(
-        //    typeof stack.postLayerStackEventCb == 'function');
         console.assert(
             typeof above_layer.revokeNexusFromBelowCb == 'function');
         this.announceNexusAboveCb = (

@@ -9,8 +9,8 @@ const ProviderTransactNexus = require(
 
 
 class ProviderTransactLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer);
+    constructor(above_layer) {
+        super(above_layer);
         this.handleinvoicerequest = null;
         this.handlepayrequest = null;
     }
@@ -36,7 +36,6 @@ class ProviderTransactLayer extends ProtocolLayer {
     }
 
     handleInvoiceRequest(provider_transact_nexus, msats, request_uuid) {
-        //this.stack.gotRequestInvoiceCb(msats, request_uuid);
         if (this.handleinvoicerequest != null) {
             this.handleinvoicerequest(provider_transact_nexus, msats,
                                       request_uuid);
@@ -44,7 +43,6 @@ class ProviderTransactLayer extends ProtocolLayer {
     }
 
     handlePayRequest(provider_transact_nexus, bolt11, request_uuid) {
-        //this.stack.gotRequestPayCb(preimage, request_uuid);
         if (this.handlepayrequest != null) {
             this.handlepayrequest(provider_transact_nexus, bolt11,
                                   request_uuid);
