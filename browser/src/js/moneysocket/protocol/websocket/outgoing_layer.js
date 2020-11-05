@@ -9,7 +9,7 @@ const OutgoingSocket = require("./outgoing_socket.js").OutgoingSocket;
 
 class OutgoingWebsocketLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
-        super(stack, above_layer, "OUTGOING_WEBSOCKET");
+        super(stack, above_layer);
         this.nexus_by_shared_seed = {};
     }
 

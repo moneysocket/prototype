@@ -40,8 +40,8 @@ class ProviderStack {
 
     setupProviderTransactLayer(above_layer) {
         var l = new ProviderTransactLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("PROVIDER_TRANSACT", nexus, status);
         }).bind(this);
         l.handleinvoicerequest = (function(nexus, msats, request_uuid) {
             this.handleInvoiceRequest(msats, request_uuid);
@@ -54,8 +54,8 @@ class ProviderStack {
 
     setupProviderLayer(above_layer) {
         var l = new ProviderLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("PROVIDER", nexus, status);
         }).bind(this);
         l.handleproviderinforequest = (function(shared_seed) {
             return this.handleProviderInfoRequest(shared_seed);
@@ -65,16 +65,16 @@ class ProviderStack {
 
     setupOutgoingRendezvousLayer(above_layer) {
         var l = new OutgoingRendezvousLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
         return l;
     }
 
     setupOutgoingWebsocketLayer(above_layer) {
         var l = new OutgoingWebsocketLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);
         return l;
     }

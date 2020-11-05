@@ -41,8 +41,8 @@ class ConsumerStack {
 
     setupConsumerTransactLayer(above_layer) {
         var l = new ConsumerTransactLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
         }).bind(this);
         l.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
             this.onBolt11(nexus, bolt11, request_reference_uuid);
@@ -55,8 +55,8 @@ class ConsumerStack {
 
     setupConsumerLayer(above_layer) {
         var l = new ConsumerLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER", nexus, status);
         }).bind(this);
         l.onproviderinfo = (function(nexus, msg) {
             this.onProviderInfo(nexus, msg);
@@ -69,16 +69,16 @@ class ConsumerStack {
 
     setupOutgoingRendezvousLayer(above_layer) {
         var l = new OutgoingRendezvousLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
         return l;
     }
 
     setupOutgoingWebsocketLayer(above_layer) {
         var l = new OutgoingWebsocketLayer(this, above_layer);
-        l.onlayerevent = (function(layer_name, nexus, status) {
-            this.onLayerEvent(layer_name, nexus, status);
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);
         return l;
     }

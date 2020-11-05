@@ -4,9 +4,8 @@
 
 
 class ProtocolLayer {
-    constructor(stack, above_layer, layer_name) {
+    constructor(stack, above_layer) {
         this.stack = stack;
-        this.layer_name = layer_name;
 
         this.onlayerevent = null;
         //console.assert(
@@ -73,7 +72,7 @@ class ProtocolLayer {
 
     notifyAppOfStatus(nexus, status) {
         if (this.onlayerevent != null) {
-            this.onlayerevent(this.layer_name, nexus, status);
+            this.onlayerevent(nexus, status);
         }
     }
 

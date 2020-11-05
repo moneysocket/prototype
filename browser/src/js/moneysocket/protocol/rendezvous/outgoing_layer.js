@@ -9,7 +9,7 @@ const OutgoingRendezvousNexus = require(
 
 class OutgoingRendezvousLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
-        super(stack, above_layer, "OUTGOING_RENDEZVOUS");
+        super(stack, above_layer);
     }
 
     announceNexusFromBelowCb(below_nexus) {

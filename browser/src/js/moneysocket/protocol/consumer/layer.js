@@ -9,7 +9,7 @@ const ConsumerNexus = require("./nexus.js").ConsumerNexus;
 
 class ConsumerLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
-        super(stack, above_layer, "CONSUMER");
+        super(stack, above_layer);
 
         this.onproviderinfo = null;
         this.onping = null;

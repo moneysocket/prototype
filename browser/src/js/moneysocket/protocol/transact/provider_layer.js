@@ -10,7 +10,7 @@ const ProviderTransactNexus = require(
 
 class ProviderTransactLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
-        super(stack, above_layer, "PROVIDER_TRANSACT");
+        super(stack, above_layer);
         this.handleinvoicerequest = null;
         this.handlepayrequest = null;
     }

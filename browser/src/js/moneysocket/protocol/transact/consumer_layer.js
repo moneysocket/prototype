@@ -9,7 +9,7 @@ const ConsumerTransactNexus = require(
 
 class ConsumerTransactLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
-        super(stack, above_layer, "CONSUMER_TRANSACT");
+        super(stack, above_layer);
 
         this.onbolt11 = null;
         this.onpreimage = null;
