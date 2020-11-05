@@ -10,13 +10,25 @@ const ConsumerNexus = require("./nexus.js").ConsumerNexus;
 class ConsumerLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
         super(stack, above_layer, "CONSUMER");
-        console.assert(typeof stack.notifyProviderCb == 'function');
-        console.assert(typeof stack.notifyPingCb == 'function');
+
+        this.onproviderinfo = null;
+        this.onping = null;
+    }
+
+    setupConsumerNexus(below_nexus) {
+        var n = new ConsumerNexus(below_nexus, this);
+        n.onproviderinfo = (function(nexus, msg) {
+            this.onProviderInfo(nexus, msg);
+        }).bind(this);
+        n.onping = (function(nexus, msecs) {
+            this.onPing(nexus, msecs);
+        }.bind(this));
+        return n;
     }
 
     announceNexusFromBelowCb(below_nexus) {
         console.log("consumer layer got nexus, starting handshake");
-        var consumer_nexus = new ConsumerNexus(below_nexus, this);
+        var consumer_nexus = this.setupConsumerNexus(below_nexus);
         this._trackNexus(consumer_nexus, below_nexus);
 
         consumer_nexus.startHandshake(this.consumerFinishedCb.bind(this));
@@ -36,12 +48,16 @@ class ConsumerLayer extends ProtocolLayer {
         consumer_nexus.stopPinging();
     }
 
-    notifyProviderCb(consumer_nexus, msg) {
-        this.stack.notifyProviderCb(consumer_nexus, msg);
+    onProviderInfo(consumer_nexus, msg) {
+        if (this.onproviderinfo != null) {
+            this.onproviderinfo(consumer_nexus, msg);
+        }
     }
 
-    notifyPingCb(consumer_nexus, msecs) {
-        this.stack.notifyPingCb(consumer_nexus, msecs);
+    onPing(consumer_nexus, msecs) {
+        if (this.onping != null) {
+            this.onping(consumer_nexus, msecs);
+        }
     }
 }
 

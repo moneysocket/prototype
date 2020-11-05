@@ -7,32 +7,46 @@ const ConsumerTransactNexus = require(
     "./consumer_nexus.js").ConsumerTransactNexus;
 
 
-
 class ConsumerTransactLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
         super(stack, above_layer, "CONSUMER_TRANSACT");
-        console.assert(typeof stack.notifyPreimageCb == 'function');
-        console.assert(typeof stack.notifyInvoiceCb == 'function');
+
+        this.onbolt11 = null;
+        this.onpreimage = null;
+    }
+
+    setupConsumerTransactNexus(below_nexus) {
+        var n = new ConsumerTransactNexus(below_nexus, this);
+        n.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
+            this.onBolt11(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        n.onpreimage = (function(nexus, preimage, request_reference_uuid) {
+            this.onPreimage(nexus, preimage, request_reference_uuid);
+        }).bind(this);
+        return n;
     }
 
     announceNexusFromBelowCb(below_nexus) {
         console.log("consumer transact layer got nexus");
-        var consumer_transact_nexus = new ConsumerTransactNexus(below_nexus,
-                                                                this);
+        var consumer_transact_nexus = this.setupConsumerTransactNexus(
+            below_nexus);
         this._trackNexus(consumer_transact_nexus, below_nexus);
         this._trackNexusAnnounced(consumer_transact_nexus);
         this.announceNexusAboveCb(consumer_transact_nexus);
     }
 
-    notifyInvoiceCb(consumer_transact_nexus, bolt11, request_reference_uuid) {
-        this.stack.notifyInvoiceCb(consumer_transact_nexus, bolt11,
-                                   request_reference_uuid);
+    onBolt11(consumer_transact_nexus, bolt11, request_reference_uuid) {
+        if (this.onbolt11 != null) {
+            this.onbolt11(consumer_transact_nexus, bolt11,
+                          request_reference_uuid);
+        }
     }
 
-    notifyPreimageCb(consumer_transact_nexus, preimage,
-                     request_reference_uuid) {
-        this.stack.notifyPreimageCb(consumer_transact_nexus, preimage,
-                                    request_reference_uuid);
+    onPreimage(consumer_transact_nexus, preimage, request_reference_uuid) {
+        if (this.onpreimage != null) {
+            this.onpreimage(consumer_transact_nexus, preimage,
+                            request_reference_uuid);
+        }
     }
 }
 

@@ -10,13 +10,22 @@ const ProviderNexus = require("./nexus.js").ProviderNexus;
 class ProviderLayer extends ProtocolLayer {
     constructor(stack, above_layer) {
         super(stack, above_layer, "PROVIDER");
-        console.assert(typeof stack.getProviderInfo == 'function');
+        this.handleproviderinforequest = null;
+
         this.waiting_for_app = {};
         this.nexus_by_shared_seed = {};
     }
 
+    setupProviderNexus(below_nexus) {
+        var n = new ProviderNexus(below_nexus, this);
+        n.handleproviderinforequest = (function() {
+            return this.handleProviderInfoRequest();
+        }).bind(this);
+        return n;
+    }
+
     announceNexusFromBelowCb(below_nexus) {
-        var provider_nexus = new ProviderNexus(below_nexus, this);
+        var provider_nexus = this.setupProviderNexus(below_nexus);
         this._trackNexus(provider_nexus, below_nexus);
 
         var shared_seed_str = provider_nexus.getSharedSeed().toString();
@@ -54,6 +63,11 @@ class ProviderLayer extends ProtocolLayer {
             delete this.waiting_for_app[shared_seed_str];
             provider_nexus.providerNowReady();
         }
+    }
+
+    handleProviderInfoRequest(shared_seed) {
+        console.assert(this.handleproviderinforequest != null);
+        return this.handleproviderinforequest(shared_seed);
     }
 
     sendProviderInfoUpdate(shared_seed) {

@@ -18,18 +18,22 @@ const LAYER_REQUESTS = new Set(["REQUEST_PAY",
 class ProviderTransactNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-        console.assert(typeof this.layer.requestInvoiceCb == 'function');
-        console.assert(typeof this.layer.requestPayCb == 'function');
+        this.handleinvoicerequest = null;
+        this.handlepayrequest = null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
 
     handleLayerRequest(msg) {
         if (msg['request_name'] == "REQUEST_INVOICE") {
-            this.layer.requestInvoiceCb(this, msg['msats'],
-                                        msg['request_uuid']);
+            if (this.handleinvoicerequest != null) {
+                this.handleinvoicerequest(this, msg['msats'],
+                                          msg['request_uuid']);
+            }
         } else if (msg['request_name'] == "REQUEST_PAY") {
-            this.layer.requestPayCb(this, msg['bolt11'], msg['request_uuid']);
+            if (this.handlepayrequest != null) {
+                this.handlepayrequest(this, msg['bolt11'], msg['request_uuid']);
+            }
         }
     }
 

@@ -24,26 +24,76 @@ class ConsumerStack {
         this.onbolt11 = null;
         this.onpreimage = null;
 
-        this.transact_layer = new ConsumerTransactLayer(this, this);
-        this.consumer_layer = new ConsumerLayer(this, this.transact_layer);
-        this.rendezvous_layer = new OutgoingRendezvousLayer(
-            this, this.consumer_layer);
-        this.websocket_layer = new OutgoingWebsocketLayer(
-            this, this.rendezvous_layer);
+        this.transact_layer = this.setupConsumerTransactLayer(this);
+        this.consumer_layer = this.setupConsumerLayer(this.transact_layer);
+        this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.consumer_layer);
+        this.websocket_layer = this.setupOutgoingWebsocketLayer(
+            this.rendezvous_layer);
 
+        this.nexus = null;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupConsumerTransactLayer(above_layer) {
+        var l = new ConsumerTransactLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        l.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
+            this.onBolt11(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        l.onpreimage = (function(nexus, preimage, request_reference_uuid) {
+            this.onPreimage(nexus, preimage, request_reference_uuid);
+        }).bind(this);
+        return l;
+    }
+
+    setupConsumerLayer(above_layer) {
+        var l = new ConsumerLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        l.onproviderinfo = (function(nexus, msg) {
+            this.onProviderInfo(nexus, msg);
+        }).bind(this);
+        l.onping = (function(nexus, msecs) {
+            this.onPing(nexus, msecs);
+        }).bind(this);
+        return l;
+    }
+
+    setupOutgoingRendezvousLayer(above_layer) {
+        var l = new OutgoingRendezvousLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        return l;
+    }
+
+    setupOutgoingWebsocketLayer(above_layer) {
+        var l = new OutgoingWebsocketLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        return l;
     }
 
     //////////////////////////////////////////////////////////////////////////
     // transact layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyInvoiceCb(transact_nexus, bolt11, request_reference_uuid) {
+    onBolt11(transact_nexus, bolt11, request_reference_uuid) {
         if (this.onbolt11 != null) {
             this.onbolt11(bolt11, request_reference_uuid);
         }
     }
 
-    notifyPreimageCb(transact_nexus, preimage, request_reference_uuid) {
+    onPreimage(transact_nexus, preimage, request_reference_uuid) {
         if (this.onpreimage != null) {
             this.onpreimage(preimage, request_reference_uuid);
         }
@@ -53,7 +103,7 @@ class ConsumerStack {
     // consumer layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyProviderCb(consumer_nexus, msg) {
+    onProviderInfo(consumer_nexus, msg) {
         var provider_info = {'payer':         msg['payer'],
                              'payee':         msg['payee'],
                              'wad':           msg['wad'],
@@ -63,7 +113,7 @@ class ConsumerStack {
         }
     }
 
-    notifyPingCb(consumer_nexus, msecs) {
+    onPing(consumer_nexus, msecs) {
         if (this.onping != null) {
             this.onping(msecs);
         }
@@ -92,7 +142,7 @@ class ConsumerStack {
         }
     }
 
-    postLayerStackEventCb(layer_name, nexus, status) {
+    onLayerEvent(layer_name, nexus, status) {
         if (this.onstackevent != null) {
             this.onstackevent(layer_name, nexus, status);
         }

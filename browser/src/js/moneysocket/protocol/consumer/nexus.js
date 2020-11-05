@@ -18,8 +18,10 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_PROVIDER",
 class ConsumerNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-        console.assert(typeof this.layer.notifyProviderCb == 'function');
-        console.assert(typeof this.layer.notifyPingCb == 'function');
+
+        this.onproviderinfo = null;
+        this.onping = null;
+
         this.consumerFinishedCb = null;
         this.handshake_finished = false;
         this.ping_interval = null;
@@ -46,13 +48,17 @@ class ConsumerNexus extends ProtocolNexus {
                 this.handshake_finished = true;
                 this.consumerFinishedCb(this);
             }
-            this.layer.notifyProviderCb(this, msg);
+            if (this.onproviderinfo != null) {
+                this.onproviderinfo(this, msg);
+            }
         } else if (msg['notification_name'] == "NOTIFY_PROVIDER_NOT_READY") {
             console.log("provider not ready, waiting");
         } else if (msg['notification_name'] == "NOTIFY_PONG") {
             var msecs = (Timestamp.getNowTimestamp() -
                          this.ping_start_time) * 1000;
-            this.layer.notifyPingCb(this, Math.round(msecs));
+            if (this.onping != null) {
+                this.onping(this, Math.round(msecs));
+            }
             this.ping_start_time = null;
         }
     }

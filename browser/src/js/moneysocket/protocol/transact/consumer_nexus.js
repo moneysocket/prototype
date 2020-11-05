@@ -17,21 +17,28 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_INVOICE",
 class ConsumerTransactNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-        console.assert(typeof this.layer.notifyInvoiceCb == 'function');
-        console.assert(typeof this.layer.notifyPreimageCb == 'function');
+
+        this.onbolt11 = null;
+        this.onpreimage = null;
+        //console.assert(typeof this.layer.notifyInvoiceCb == 'function');
+        //console.assert(typeof this.layer.notifyPreimageCb == 'function');
     }
 
     ///////////////////////////////////////////////////////////////////////////
 
     handleLayerNotification(msg) {
         if (msg['notification_name'] == "NOTIFY_INVOICE") {
-            this.layer.notifyInvoiceCb(this, msg['bolt11'],
-                                       msg['request_reference_uuid']);
+            if (this.onbolt11 != null) {
+                this.onbolt11(this, msg['bolt11'],
+                              msg['request_reference_uuid']);
+            }
         }
         else if (msg['notification_name'] == "NOTIFY_PREIMAGE") {
             console.log("notify preimage: " + JSON.stringify(msg));
-            this.layer.notifyPreimageCb(this, msg['preimage'],
-                                        msg['request_reference_uuid']);
+            if (this.preimage != null) {
+                this.preimage(this, msg['preimage'],
+                              msg['request_reference_uuid']);
+            }
         }
     }
 

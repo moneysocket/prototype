@@ -23,18 +23,65 @@ class ProviderStack {
         this.handlepayrequest = null;
         this.handleproviderinforequest = null;
 
-        this.transact_layer = new ProviderTransactLayer(this, this);
-        this.provider_layer = new ProviderLayer(this, this.transact_layer);
-        this.rendezvous_layer = new OutgoingRendezvousLayer(this,
+        this.transact_layer = this.setupProviderTransactLayer(this);
+        this.provider_layer = this.setupProviderLayer(this.transact_layer);
+        this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
             this.provider_layer);
-        this.websocket_layer = new OutgoingWebsocketLayer(this,
+        this.websocket_layer = this.setupOutgoingWebsocketLayer(
             this.rendezvous_layer);
 
         this.nexus = null;
         this.shared_seed = null;
     }
 
-    getProviderInfo(shared_seed) {
+    //////////////////////////////////////////////////////////////////////////
+    // setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupProviderTransactLayer(above_layer) {
+        var l = new ProviderTransactLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        l.handleinvoicerequest = (function(nexus, msats, request_uuid) {
+            this.handleInvoiceRequest(msats, request_uuid);
+        }).bind(this);
+        l.handlepayrequest = (function(nexus, msats, request_uuid) {
+            this.handlePayRequest(msats, request_uuid);
+        }).bind(this);
+        return l;
+    }
+
+    setupProviderLayer(above_layer) {
+        var l = new ProviderLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        l.handleproviderinforequest = (function(shared_seed) {
+            return this.handleProviderInfoRequest(shared_seed);
+        }).bind(this);
+        return l;
+    }
+
+    setupOutgoingRendezvousLayer(above_layer) {
+        var l = new OutgoingRendezvousLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        return l;
+    }
+
+    setupOutgoingWebsocketLayer(above_layer) {
+        var l = new OutgoingWebsocketLayer(this, above_layer);
+        l.onlayerevent = (function(layer_name, nexus, status) {
+            this.onLayerEvent(layer_name, nexus, status);
+        }).bind(this);
+        return l;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    handleProviderInfoRequest(shared_seed) {
         console.assert(this.handleproviderinforequest != null);
         return this.handleproviderinforequest();
     }
@@ -75,13 +122,17 @@ class ProviderStack {
         }
     }
 
-    postLayerStackEventCb(layer_name, nexus, status) {
+    onLayerEvent(layer_name, nexus, status) {
         if (this.onstackevent != null) {
             this.onstackevent(layer_name, nexus, status);
         }
     }
 
-    gotRequestInvoiceCb(msats, request_uuid) {
+    //////////////////////////////////////////////////////////////////////////
+    // transact layer invoice request
+    //////////////////////////////////////////////////////////////////////////
+
+    handleInvoiceRequest(msats, request_uuid) {
         if (this.handleinvoicerequest != null) {
             this.handleinvoicerequest(mstats, request_uuid);
         }
@@ -91,7 +142,7 @@ class ProviderStack {
         this.nexus.notifyInvoice(bolt11, request_reference_uuid);
     }
 
-    gotRequestPayCb(bolt11, request_uuid) {
+    handlePayRequest(bolt11, request_uuid) {
         if (this.handlepayrequest != null) {
             this.handlepayrequest(bolt11, request_uuid);
         }

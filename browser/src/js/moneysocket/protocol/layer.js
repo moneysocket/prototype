@@ -8,10 +8,9 @@ class ProtocolLayer {
         this.stack = stack;
         this.layer_name = layer_name;
 
-        console.assert(
-            typeof stack.postLayerStackEventCb == 'function');
-        console.assert(
-            typeof above_layer.announceNexusFromBelowCb == 'function');
+        this.onlayerevent = null;
+        //console.assert(
+        //    typeof stack.postLayerStackEventCb == 'function');
         console.assert(
             typeof above_layer.revokeNexusFromBelowCb == 'function');
         this.announceNexusAboveCb = (
@@ -73,7 +72,9 @@ class ProtocolLayer {
     }
 
     notifyAppOfStatus(nexus, status) {
-        this.stack.postLayerStackEventCb(this.layer_name, nexus, status);
+        if (this.onlayerevent != null) {
+            this.onlayerevent(this.layer_name, nexus, status);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
