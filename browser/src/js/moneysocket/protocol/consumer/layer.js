@@ -8,9 +8,8 @@ const ConsumerNexus = require("./nexus.js").ConsumerNexus;
 
 
 class ConsumerLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
-
+    constructor() {
+        super();
         this.onproviderinfo = null;
         this.onping = null;
     }
@@ -26,7 +25,7 @@ class ConsumerLayer extends ProtocolLayer {
         return n;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         console.log("consumer layer got nexus, starting handshake");
         var consumer_nexus = this.setupConsumerNexus(below_nexus);
         this._trackNexus(consumer_nexus, below_nexus);
@@ -36,17 +35,21 @@ class ConsumerLayer extends ProtocolLayer {
 
     consumerFinishedCb(consumer_nexus) {
         this._trackNexusAnnounced(consumer_nexus);
-        this.notifyAppOfStatus(consumer_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(consumer_nexus);
+        this.sendLayerEvent(consumer_nexus, "NEXUS_ANNOUNCED");
+        if (this.onnexusonline != null) {
+            this.onnexusonline(consumer_nexus);
+        }
         consumer_nexus.startPinging();
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var consumer_nexus = this.nexuses[
             this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
+        super.revokeNexus(below_nexus);
         consumer_nexus.stopPinging();
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     onProviderInfo(consumer_nexus, msg) {
         if (this.onproviderinfo != null) {

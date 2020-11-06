@@ -8,20 +8,22 @@ const OutgoingSocket = require("./outgoing_socket.js").OutgoingSocket;
 
 
 class OutgoingWebsocketLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
+    constructor() {
+        super();
         this.nexus_by_shared_seed = {};
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         var websocket_nexus = new WebsocketNexus(below_nexus, this);
         this._trackNexus(websocket_nexus, below_nexus);
         this._trackNexusAnnounced(websocket_nexus);
 
         var shared_seed = websocket_nexus.getSharedSeed();
         this.nexus_by_shared_seed[shared_seed] = websocket_nexus;
-        this.notifyAppOfStatus(websocket_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(websocket_nexus);
+        this.sendLayerEvent(websocket_nexus, "NEXUS_ANNOUNCED");
+        if (this.onnexusonline != null) {
+            this.onnexusonline(websocket_nexus);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

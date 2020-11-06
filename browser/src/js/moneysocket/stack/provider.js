@@ -23,12 +23,19 @@ class ProviderStack {
         this.handlepayrequest = null;
         this.handleproviderinforequest = null;
 
-        this.transact_layer = this.setupProviderTransactLayer(this);
-        this.provider_layer = this.setupProviderLayer(this.transact_layer);
+        this.websocket_layer = this.setupOutgoingWebsocketLayer();
         this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.websocket_layer);
+        this.provider_layer = this.setupProviderLayer(this.rendezvous_layer);
+        this.transact_layer = this.setupProviderTransactLayer(
             this.provider_layer);
-        this.websocket_layer = this.setupOutgoingWebsocketLayer(
-            this.rendezvous_layer);
+
+        this.transact_layer.onnexusonline = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        this.transact_layer.onnexusoffline = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
 
         this.nexus = null;
         this.shared_seed = null;
@@ -38,8 +45,8 @@ class ProviderStack {
     // setup
     //////////////////////////////////////////////////////////////////////////
 
-    setupProviderTransactLayer(above_layer) {
-        var l = new ProviderTransactLayer(above_layer);
+    setupProviderTransactLayer(below_layer) {
+        var l = new ProviderTransactLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("PROVIDER_TRANSACT", nexus, status);
         }).bind(this);
@@ -49,30 +56,33 @@ class ProviderStack {
         l.handlepayrequest = (function(nexus, msats, request_uuid) {
             this.handlePayRequest(msats, request_uuid);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupProviderLayer(above_layer) {
-        var l = new ProviderLayer(above_layer);
+    setupProviderLayer(below_layer) {
+        var l = new ProviderLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("PROVIDER", nexus, status);
         }).bind(this);
         l.handleproviderinforequest = (function(shared_seed) {
             return this.handleProviderInfoRequest(shared_seed);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupOutgoingRendezvousLayer(above_layer) {
-        var l = new OutgoingRendezvousLayer(above_layer);
+    setupOutgoingRendezvousLayer(below_layer) {
+        var l = new OutgoingRendezvousLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupOutgoingWebsocketLayer(above_layer) {
-        var l = new OutgoingWebsocketLayer(above_layer);
+    setupOutgoingWebsocketLayer(below_layer) {
+        var l = new OutgoingWebsocketLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);
@@ -102,7 +112,7 @@ class ProviderStack {
     // layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         console.log("provider stack got nexus");
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
@@ -112,7 +122,7 @@ class ProviderStack {
         }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         console.log("provider stack got nexus revoked");
         this.nexus = null;
         this.shared_seed = null;

@@ -8,8 +8,8 @@ const ProviderNexus = require("./nexus.js").ProviderNexus;
 
 
 class ProviderLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
+    constructor() {
+        super();
         this.handleproviderinforequest = null;
 
         this.waiting_for_app = {};
@@ -24,27 +24,31 @@ class ProviderLayer extends ProtocolLayer {
         return n;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    ///////////////////////////////////////////////////////////////////////////
+
+    announceNexus(below_nexus) {
         var provider_nexus = this.setupProviderNexus(below_nexus);
         this._trackNexus(provider_nexus, below_nexus);
 
         var shared_seed_str = provider_nexus.getSharedSeed().toString();
         this.nexus_by_shared_seed[shared_seed_str] = provider_nexus;
 
-        this.notifyAppOfStatus(provider_nexus, "NEXUS_WAITING");
+        this.sendLayerEvent(provider_nexus, "NEXUS_WAITING");
         provider_nexus.waitForConsumer(this.providerFinishedCb.bind(this));
     }
 
     providerFinishedCb(provider_nexus) {
         this._trackNexusAnnounced(provider_nexus);
-        this.notifyAppOfStatus(provider_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(provider_nexus);
+        this.sendLayerEvent(provider_nexus, "NEXUS_ANNOUNCED");
+        if (this.onnexusonline != null) {
+            this.onnexusonline(provider_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var provider_nexus = this.nexuses[
             this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
+        super.revokeNexus(below_nexus);
         var shared_seed_str = provider_nexus.getSharedSeed().toString();
         delete this.waiting_for_app[shared_seed_str];
         delete this.nexus_by_shared_seed[shared_seed_str];

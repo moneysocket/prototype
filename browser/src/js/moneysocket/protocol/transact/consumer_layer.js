@@ -8,12 +8,14 @@ const ConsumerTransactNexus = require(
 
 
 class ConsumerTransactLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
+    constructor(below_layer) {
+        super(below_layer);
 
         this.onbolt11 = null;
         this.onpreimage = null;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     setupConsumerTransactNexus(below_nexus) {
         var n = new ConsumerTransactNexus(below_nexus, this);
@@ -26,14 +28,20 @@ class ConsumerTransactLayer extends ProtocolLayer {
         return n;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    ///////////////////////////////////////////////////////////////////////////
+
+    announceNexus(below_nexus) {
         console.log("consumer transact layer got nexus");
         var consumer_transact_nexus = this.setupConsumerTransactNexus(
             below_nexus);
         this._trackNexus(consumer_transact_nexus, below_nexus);
         this._trackNexusAnnounced(consumer_transact_nexus);
-        this.announceNexusAboveCb(consumer_transact_nexus);
+        if (this.onnexusonline != null) {
+            this.onnexusonline(consumer_transact_nexus);
+        }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
 
     onBolt11(consumer_transact_nexus, bolt11, request_reference_uuid) {
         if (this.onbolt11 != null) {

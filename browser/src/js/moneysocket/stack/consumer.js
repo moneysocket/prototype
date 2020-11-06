@@ -15,7 +15,6 @@ const ConsumerTransactLayer = require(
 
 class ConsumerStack {
     constructor() {
-
         this.onnexusonline = null;
         this.onnexusoffline = null;
         this.onproviderinfo = null;
@@ -24,12 +23,19 @@ class ConsumerStack {
         this.onbolt11 = null;
         this.onpreimage = null;
 
-        this.transact_layer = this.setupConsumerTransactLayer(this);
-        this.consumer_layer = this.setupConsumerLayer(this.transact_layer);
+        this.websocket_layer = this.setupOutgoingWebsocketLayer(null);
         this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.websocket_layer);
+        this.consumer_layer = this.setupConsumerLayer(this.rendezvous_layer);
+        this.transact_layer = this.setupConsumerTransactLayer(
             this.consumer_layer);
-        this.websocket_layer = this.setupOutgoingWebsocketLayer(
-            this.rendezvous_layer);
+
+        this.transact_layer.onnexusonline = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        this.transact_layer.onnexusoffline = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
 
         this.nexus = null;
     }
@@ -39,8 +45,8 @@ class ConsumerStack {
     // setup
     //////////////////////////////////////////////////////////////////////////
 
-    setupConsumerTransactLayer(above_layer) {
-        var l = new ConsumerTransactLayer(above_layer);
+    setupConsumerTransactLayer(below_layer) {
+        var l = new ConsumerTransactLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
         }).bind(this);
@@ -50,11 +56,12 @@ class ConsumerStack {
         l.onpreimage = (function(nexus, preimage, request_reference_uuid) {
             this.onPreimage(nexus, preimage, request_reference_uuid);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupConsumerLayer(above_layer) {
-        var l = new ConsumerLayer(above_layer);
+    setupConsumerLayer(below_layer) {
+        var l = new ConsumerLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER", nexus, status);
         }).bind(this);
@@ -64,19 +71,21 @@ class ConsumerStack {
         l.onping = (function(nexus, msecs) {
             this.onPing(nexus, msecs);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupOutgoingRendezvousLayer(above_layer) {
-        var l = new OutgoingRendezvousLayer(above_layer);
+    setupOutgoingRendezvousLayer(below_layer) {
+        var l = new OutgoingRendezvousLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
         }).bind(this);
+        l.registerAboveLayer(below_layer);
         return l;
     }
 
-    setupOutgoingWebsocketLayer(above_layer) {
-        var l = new OutgoingWebsocketLayer(above_layer);
+    setupOutgoingWebsocketLayer() {
+        var l = new OutgoingWebsocketLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
         }).bind(this);
@@ -123,7 +132,7 @@ class ConsumerStack {
     // layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
 
@@ -132,7 +141,7 @@ class ConsumerStack {
         }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         console.log("consumer stack got nexus revoked");
         this.nexus = null;
         this.shared_seed = null;

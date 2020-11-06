@@ -4,14 +4,10 @@
 
 
 class ProtocolLayer {
-    constructor(above_layer) {
+    constructor() {
         this.onlayerevent = null;
-        console.assert(
-            typeof above_layer.revokeNexusFromBelowCb == 'function');
-        this.announceNexusAboveCb = (
-            above_layer.announceNexusFromBelowCb.bind(above_layer));
-        this.revokeNexusAboveCb = (
-            above_layer.revokeNexusFromBelowCb.bind(above_layer));
+        this.onnexusonline = null;
+        this.onnexusoffline = null;
 
         this.nexuses = {};
         this.below_nexuses = {};
@@ -20,12 +16,25 @@ class ProtocolLayer {
         this.announced = {};
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+
+    registerAboveLayer(below_layer) {
+        below_layer.onnexusonline = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        below_layer.onnexusoffline = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
     _trackNexus(nexus, below_nexus) {
         this.nexuses[nexus.uuid] = nexus;
         this.below_nexuses[below_nexus.uuid] = below_nexus;
         this.nexus_by_below[below_nexus.uuid] = nexus.uuid;
         this.below_by_nexus[nexus.uuid] = below_nexus.uuid;
-        this.notifyAppOfStatus(nexus, "NEXUS_CREATED");
+        this.sendLayerEvent(nexus, "NEXUS_CREATED");
     }
 
     _untrackNexus(nexus, below_nexus) {
@@ -33,7 +42,7 @@ class ProtocolLayer {
         delete this.below_nexuses[below_nexus.uuid];
         delete this.nexus_by_below[below_nexus.uuid];
         delete this.below_by_nexus[nexus.uuid];
-        this.notifyAppOfStatus(nexus, "NEXUS_DESTROYED");
+        this.sendLayerEvent(nexus, "NEXUS_DESTROYED");
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -52,21 +61,24 @@ class ProtocolLayer {
 
     ///////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         console.error("implement in subclass");
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var nexus = this.nexuses[this.nexus_by_below[below_nexus.uuid]];
         this._untrackNexus(nexus, below_nexus);
         if (this._isNexusAnnounced(nexus)) {
             this._trackNexusRevoked(nexus);
-            this.revokeNexusAboveCb(nexus);
-            this.notifyAppOfStatus(nexus, "NEXUS_REVOKED");
+
+            if (this.onnexusoffline != null) {
+                this.onnexusoffline(nexus);
+            }
+            this.sendLayerEvent(nexus, "NEXUS_REVOKED");
         }
     }
 
-    notifyAppOfStatus(nexus, status) {
+    sendLayerEvent(nexus, status) {
         if (this.onlayerevent != null) {
             this.onlayerevent(nexus, status);
         }

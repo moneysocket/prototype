@@ -9,8 +9,8 @@ const ProviderTransactNexus = require(
 
 
 class ProviderTransactLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
+    constructor() {
+        super();
         this.handleinvoicerequest = null;
         this.handlepayrequest = null;
     }
@@ -18,7 +18,7 @@ class ProviderTransactLayer extends ProtocolLayer {
     setupProviderTransactNexus(below_nexus) {
         var n = new ProviderTransactNexus(below_nexus, this);
         n.handleinvoicerequest = (function(nexus, bolt11, request_uuid) {
-            this.handlInvoiceRequest(nexus, msats, request_uuid);
+            this.handleInvoiceRequest(nexus, msats, request_uuid);
         }).bind(this);
         n.handlepayrequest = (function(nexus, bolt11, request_uuid) {
             this.handlePayRequest(nexus, bolt11, request_uuid);
@@ -26,13 +26,15 @@ class ProviderTransactLayer extends ProtocolLayer {
         return n;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         console.log("consumer layer got nexus, starting handshake");
         var provider_transact_nexus = this.setupProviderTransactNexus(
             below_nexus);
         this._trackNexus(provider_transact_nexus, below_nexus);
         this._trackNexusAnnounced(provider_transact_nexus);
-        this.announceNexusAboveCb(provider_transact_nexus);
+        if (this.onnexusonline != null) {
+            this.onnexusonline(provider_transact_nexus);
+        }
     }
 
     handleInvoiceRequest(provider_transact_nexus, msats, request_uuid) {

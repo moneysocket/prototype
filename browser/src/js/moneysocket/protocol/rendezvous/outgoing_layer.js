@@ -8,24 +8,26 @@ const OutgoingRendezvousNexus = require(
 
 
 class OutgoingRendezvousLayer extends ProtocolLayer {
-    constructor(above_layer) {
-        super(above_layer);
+    constructor() {
+        super();
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         var rendezvous_nexus = new OutgoingRendezvousNexus(below_nexus, this);
         this._trackNexus(rendezvous_nexus, below_nexus);
 
         var shared_seed = rendezvous_nexus.getSharedSeed();
         var rid = shared_seed.deriveRendezvousIdHex();
-        this.notifyAppOfStatus(rendezvous_nexus, "NEXUS_WAITING");
+        this.sendLayerEvent(rendezvous_nexus, "NEXUS_WAITING");
         rendezvous_nexus.startRendezvous(rid,
                                          this.rendezvousFinishedCb.bind(this));
     }
 
     rendezvousFinishedCb(rendezvous_nexus) {
         this._trackNexusAnnounced(rendezvous_nexus);
-        this.announceNexusAboveCb(rendezvous_nexus);
+        if (this.onnexusonline != null) {
+            this.onnexusonline(rendezvous_nexus);
+        }
     }
 
 }

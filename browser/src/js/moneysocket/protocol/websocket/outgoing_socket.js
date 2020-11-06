@@ -55,7 +55,7 @@ class OutgoingSocket {
 
     handleOpen(event) {
         console.log("websocket open: " + event);
-        this.layer.announceNexusFromBelowCb(this);
+        this.layer.announceNexus(this);
     }
 
     handleClose(event) {
@@ -64,7 +64,7 @@ class OutgoingSocket {
         console.log("event.code: " + event.code);
         console.log("event.reason: " + event.reason);
         console.log("event.wasClean: " + event.wasClean);
-        this.layer.revokeNexusFromBelowCb(this);
+        this.layer.revokeNexus(this);
     }
 
     handleError(error) {
