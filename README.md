@@ -172,5 +172,5 @@ https://youtu.be/nBHha3HRV20
 [full Bitcoin node]: https://bitcoin.org/en/full-node
 [c-lightning]: https://github.com/ElementsProject/lightning
 [LND]: https://github.com/lightningnetwork/lnd
-[screenshot]: ./screenshot.png 
-[screenshotGIF]: ./screenshot.gif 
+[screenshot]: ./doc/img/screenshot.png 
+[screenshotGIF]: ./doc/img/screenshot.gif 
