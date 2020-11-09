@@ -10,13 +10,18 @@ class ProtocolNexus {
         this.below_nexus = below_nexus;
         this.layer = layer;
 
-        this.upwardRecvCb = null;
-        this.upwardRecvRawCb = null;
+        this.onmessage = null;
+        this.onbinmessage = null;
+        this.registerAboveNexus(below_nexus);
+    }
 
-        this.below_nexus.registerUpwardRecvCb(
-            this.recvFromBelowCb.bind(this));
-        this.below_nexus.registerUpwardRecvRawCb(
-            this.recvRawFromBelowCb.bind(this));
+    registerAboveNexus(below_nexus) {
+        below_nexus.onmessage = (function(nexus, msg) {
+            this.onMessage(nexus, msg);
+        }).bind(this);
+        below_nexus.onbinmessage = (function(nexus, msg_bytes) {
+            this.onBinMessage(nexus, msg_bytes);
+        }).bind(this);
     }
 
 
@@ -53,8 +58,8 @@ class ProtocolNexus {
         this.below_nexus.send(msg);
     }
 
-    sendRaw(msg_bytes) {
-        this.below_nexus.sendRaw(msg_bytes);
+    sendBin(msg_bytes) {
+        this.below_nexus.sendBin(msg_bytes);
     }
 
     initiateClose() {
@@ -63,28 +68,20 @@ class ProtocolNexus {
 
     //////////////////////////////////////////////////////////////////////////
 
-
-    recvFromBelowCb(below_nexus, msg) {
-        console.assert(below_nexus.uuid == this.below_nexus.uuid);
-        this.upwardRecvCb(this, msg);
+    onMessage(below_nexus, msg) {
+        if (this.onmessage != null) {
+            this.onmessage(below_nexus, msg)
+        }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
-        console.assert(below_nexus.uuid == this.below_nexus.uuid);
-        this.upwardRecvRawCb(this, msg_bytes);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-
-    registerUpwardRecvCb(upward_recv_cb) {
-        this.upwardRecvCb = upward_recv_cb;
-    }
-
-    registerUpwardRecvRawCb(upward_recv_raw_cb) {
-        this.upwardRecvRawCb = upward_recv_raw_cb;
+    onBinMessage(below_nexus, msg_bytes) {
+        if (this.onbinmessage != null) {
+            this.onbinmessage(below_nexus, msg_bytes)
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
+
     getSharedSeed() {
         return this.below_nexus.getSharedSeed();
     }

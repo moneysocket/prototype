@@ -34,10 +34,10 @@ class ProviderNexus extends ProtocolNexus {
         return LAYER_REQUESTS.has(msg['request_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("provider nexus got msg from below");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         this.request_reference_uuid = msg['request_uuid'];
@@ -58,9 +58,9 @@ class ProviderNexus extends ProtocolNexus {
         }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("provider nexus got raw msg from below");
-        super.recvRawFromBelowCb(below_nexus, msg_bytes);
+        super.onBinMessage(below_nexus, msg_bytes);
     }
 
     ///////////////////////////////////////////////////////////////////////////

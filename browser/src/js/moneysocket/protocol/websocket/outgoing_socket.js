@@ -16,6 +16,9 @@ class OutgoingSocket {
         this.layer = layer;
         this.uuid = Uuid.uuidv4();
 
+        this.onmessage = null;
+        this.onbinmessage = null;
+
         var ws_url = websocket_location.toWsUrl();
         this.websocket = this.setupWebsocket(ws_url);
     }
@@ -23,21 +26,21 @@ class OutgoingSocket {
     setupWebsocket(ws_url) {
         var w = new WebSocket(ws_url);
         w.onmessage = (function(event) {
-            this.handleMessage(event);
+            this.onMessage(event);
         }).bind(this);
         w.onopen = (function(event) {
-            this.handleOpen(event);
+            this.onOpen(event);
         }).bind(this);
         w.onclose = (function(event) {
-            this.handleClose(event);
+            this.onClose(event);
         }).bind(this);
         w.onerror = (function(error) {
-            this.handleError(error);
+            this.onError(error);
         }).bind(this);
         return w;
     }
 
-    async handleMessage(event) {
+    async onMessage(event) {
         if (event.data instanceof Blob) {
             //console.log("ws recv data: " + event.data);
             var msg_bytes = await BinUtl.blob2Uint8Array(event.data);
@@ -46,19 +49,23 @@ class OutgoingSocket {
                                                          this.shared_seed);
             if (err != null) {
                 console.error("message decode error: " + err);
+                // TODO - handle binary messages in Javascript env?
+                // Probably needed for Node.js backend services.
             }
-            this.upwardRecvCb(this, msg);
+            if (this.onmessage != null) {
+                this.onmessage(this, msg);
+            }
         } else {
             console.error("received unexpected non-binary message");
         }
     }
 
-    handleOpen(event) {
+    onOpen(event) {
         console.log("websocket open: " + event);
         this.layer.announceNexus(this);
     }
 
-    handleClose(event) {
+    onClose(event) {
         console.log("closed");
         console.log("event: " + event);
         console.log("event.code: " + event.code);
@@ -67,7 +74,7 @@ class OutgoingSocket {
         this.layer.revokeNexus(this);
     }
 
-    handleError(error) {
+    onError(error) {
         console.log("error: " + error);
     }
 
@@ -94,27 +101,15 @@ class OutgoingSocket {
 
     send(msg) {
         var msg_bytes = MoneysocketCodec.wireEncode(msg, this.shared_seed);
-        this.sendRaw(msg_bytes);
+        this.sendBin(msg_bytes);
     }
 
-    sendRaw(msg_bytes) {
+    sendBin(msg_bytes) {
         this.websocket.send(msg_bytes.buffer);
     }
 
     initiateClose() {
         this.websocket.close();
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-
-    registerUpwardRecvCb(upward_recv_cb) {
-        // TODO - bind() this?
-        this.upwardRecvCb = upward_recv_cb;
-    }
-
-    registerUpwardRecvRawCb(upward_recv_raw_cb) {
-        // TODO - bind() this?
-        this.upwardRecvRawCb = upward_recv_raw_cb;
     }
 
     //////////////////////////////////////////////////////////////////////////

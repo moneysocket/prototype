@@ -17,8 +17,8 @@ class OutgoingRendezvousNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
         this.rendezvousFinishedCb = null;
+        this.name = "outgoing rendezvous";
     }
-
 
     isLayerMessage(msg) {
         if (msg['message_class'] != "NOTIFICATION") {
@@ -27,10 +27,10 @@ class OutgoingRendezvousNexus extends ProtocolNexus {
         return LAYER_NOTIFICATIONS.has(msg['notification_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("rendezvous nexus got message");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
 
@@ -44,7 +44,7 @@ class OutgoingRendezvousNexus extends ProtocolNexus {
         }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("rendezvous nexus got raw message");
     }
 

@@ -37,10 +37,10 @@ class ConsumerNexus extends ProtocolNexus {
         return LAYER_NOTIFICATIONS.has(msg['notification_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("consumer nexus got message");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         if (msg['notification_name'] == "NOTIFY_PROVIDER") {
@@ -63,7 +63,7 @@ class ConsumerNexus extends ProtocolNexus {
         }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("consumer nexus got raw msg from below");
     }
 

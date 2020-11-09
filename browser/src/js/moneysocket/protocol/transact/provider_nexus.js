@@ -44,7 +44,7 @@ class ProviderTransactNexus extends ProtocolNexus {
         return LAYER_REQUESTS.has(msg['request_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("provider transact nexus got message");
         if (! this.isLayerMessage(msg)) {
             super.recvFromBelowCb(below_nexus, msg)
@@ -53,7 +53,7 @@ class ProviderTransactNexus extends ProtocolNexus {
         this.handleLayerRequest(msg);
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("transact nexus got raw msg from below");
     }
 

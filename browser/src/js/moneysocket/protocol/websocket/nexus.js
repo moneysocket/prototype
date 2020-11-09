@@ -5,20 +5,10 @@
 const ProtocolNexus = require("../nexus.js").ProtocolNexus;
 
 
-
 class WebsocketNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-    }
-
-    recvFromBelowCb(below_nexus, msg) {
-        //console.log("websocket nexus got msg from below");
-        super.recvFromBelowCb(below_nexus, msg);
-    }
-
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
-        //console.log("websocket nexus got raw msg from below");
-        super.recvRawFromBelowCb(below_nexus, msg_bytes);
+        // below_nexus is an OutgoingSocket instance
     }
 }
 

@@ -20,8 +20,6 @@ class ConsumerTransactNexus extends ProtocolNexus {
 
         this.onbolt11 = null;
         this.onpreimage = null;
-        //console.assert(typeof this.layer.notifyInvoiceCb == 'function');
-        //console.assert(typeof this.layer.notifyPreimageCb == 'function');
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -50,16 +48,16 @@ class ConsumerTransactNexus extends ProtocolNexus {
         return LAYER_NOTIFICATIONS.has(msg['notification_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("transact nexus got message");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         this.handleLayerNotification(msg);
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("transact nexus got raw msg from below");
     }
 
