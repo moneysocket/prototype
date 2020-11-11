@@ -5,13 +5,12 @@
 const WebsocketLocation = require(
     '../beacon/location/websocket.js').WebsocketLocation;
 const OutgoingWebsocketLayer = require(
-    "../protocol/websocket/outgoing_layer.js").OutgoingWebsocketLayer;
-const ProviderLayer = require(
-    "../protocol/provider/layer.js").ProviderLayer;
+    "../layer/outgoing_websocket.js").OutgoingWebsocketLayer;
+const ProviderLayer = require("../layer/provider.js").ProviderLayer;
 const OutgoingRendezvousLayer = require(
-    "../protocol/rendezvous/outgoing_layer.js").OutgoingRendezvousLayer;
+    "../layer/outgoing_rendezvous.js").OutgoingRendezvousLayer;
 const ProviderTransactLayer = require(
-    "../protocol/transact/provider_layer.js").ProviderTransactLayer;
+    "../layer/provider_transact.js").ProviderTransactLayer;
 
 
 class ProviderStack {

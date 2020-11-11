@@ -2,8 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Nexus = require("../moneysocket/protocol/nexus.js").Nexus;
-
+const Nexus = require("../moneysocket/nexus/nexus.js").Nexus;
 
 const RequestOpinionSeller = require(
     "../buyer/request_opinion_seller.js").RequestOpinionSeller;

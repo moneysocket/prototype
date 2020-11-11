@@ -2,13 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Nexus = require("../nexus.js").Nexus;
+const Nexus = require("./nexus.js").Nexus;
 
-const NotifyPong = require("../../message/notification/pong.js").NotifyPong;
+const NotifyPong = require("../message/notification/pong.js").NotifyPong;
 const NotifyProviderNotReady = require(
-    "../../message/notification/provider_not_ready.js").NotifyProviderNotReady;
+    "../message/notification/provider_not_ready.js").NotifyProviderNotReady;
 const NotifyProvider = require(
-    "../../message/notification/provider.js").NotifyProvider;
+    "../message/notification/provider.js").NotifyProvider;
 
 
 const LAYER_REQUESTS = new Set(["REQUEST_PROVIDER",

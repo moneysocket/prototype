@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const Timestamp = require('../moneysocket/utl/timestamp.js').Timestamp;
-const Nexus = require("../moneysocket/protocol/nexus.js").Nexus;
+const Nexus = require("../moneysocket/nexus/nexus.js").Nexus;
 
 const RequestOpinionSeller = require(
     "./request_opinion_seller.js").RequestOpinionSeller;

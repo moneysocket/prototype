@@ -4,7 +4,7 @@
 
 
 
-const Layer = require("../moneysocket/protocol/layer.js").Layer;
+const Layer = require("../moneysocket/layer/layer.js").Layer;
 const BuyerNexus = require("./nexus.js").BuyerNexus;
 
 

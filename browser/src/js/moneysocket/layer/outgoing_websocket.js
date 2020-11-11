@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Layer =  require("../layer.js").Layer;
-const WebsocketNexus = require("./nexus.js").WebsocketNexus;
-const OutgoingSocket = require("./outgoing_socket.js").OutgoingSocket;
+const Layer =  require("./layer.js").Layer;
+const WebsocketNexus = require("../nexus/websocket.js").WebsocketNexus;
+const OutgoingSocket = require("../nexus/outgoing_socket.js").OutgoingSocket;
 
 
 class OutgoingWebsocketLayer extends Layer {

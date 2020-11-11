@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Timestamp = require('../../utl/timestamp.js').Timestamp;
-const Nexus = require("../nexus.js").Nexus;
+const Timestamp = require('../utl/timestamp.js').Timestamp;
+const Nexus = require("./nexus.js").Nexus;
 
 const RequestProvider = require(
-    "../../message/request/provider.js").RequestProvider;
-const RequestPing = require("../../message/request/ping.js").RequestPing;
+    "../message/request/provider.js").RequestProvider;
+const RequestPing = require("../message/request/ping.js").RequestPing;
 
 
 const LAYER_NOTIFICATIONS = new Set(["NOTIFY_PROVIDER",

@@ -6,12 +6,12 @@ const WebsocketLocation = require(
     '../beacon/location/websocket.js').WebsocketLocation;
 
 const OutgoingWebsocketLayer = require(
-    "../protocol/websocket/outgoing_layer.js").OutgoingWebsocketLayer;
+    "../layer/outgoing_websocket.js").OutgoingWebsocketLayer;
 const OutgoingRendezvousLayer = require(
-    "../protocol/rendezvous/outgoing_layer.js").OutgoingRendezvousLayer;
-const ConsumerLayer = require("../protocol/consumer/layer.js").ConsumerLayer;
+    "../layer/outgoing_rendezvous.js").OutgoingRendezvousLayer;
+const ConsumerLayer = require("../layer/consumer.js").ConsumerLayer;
 const ConsumerTransactLayer = require(
-    "../protocol/transact/consumer_layer.js").ConsumerTransactLayer;
+    "../layer/consumer_transact.js").ConsumerTransactLayer;
 
 class ConsumerStack {
     constructor() {

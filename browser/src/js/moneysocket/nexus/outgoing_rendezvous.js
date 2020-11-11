@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Nexus = require("../nexus.js").Nexus;
+const Nexus = require("./nexus.js").Nexus;
 
 const RequestRendezvous = require(
-    "../../message/request/rendezvous.js").RequestRendezvous;
+    "../message/request/rendezvous.js").RequestRendezvous;
 
 
 const LAYER_NOTIFICATIONS = new Set(["NOTIFY_RENDEZVOUS",

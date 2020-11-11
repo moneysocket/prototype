@@ -2,9 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Layer =  require("../layer.js").Layer;
-const ConsumerNexus = require("./nexus.js").ConsumerNexus;
-
+const Layer = require("./layer.js").Layer;
+const ConsumerNexus = require("../nexus/consumer.js").ConsumerNexus;
 
 
 class ConsumerLayer extends Layer {

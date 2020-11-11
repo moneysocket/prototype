@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Layer =  require("../layer.js").Layer;
+const Layer =  require("./layer.js").Layer;
 const ProviderTransactNexus = require(
-    "./provider_nexus.js").ProviderTransactNexus;
+    "../nexus/provider_transact.js").ProviderTransactNexus;
 
 
 

@@ -3,9 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-
-const Layer = require(
-    "../moneysocket/protocol/layer.js").Layer;
+const Layer = require("../moneysocket/layer/layer.js").Layer;
 const SellerNexus = require("./nexus.js").SellerNexus;
 
 

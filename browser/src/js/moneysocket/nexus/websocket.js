@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Nexus = require("../nexus.js").Nexus;
+const Nexus = require("./nexus.js").Nexus;
 
 
 class WebsocketNexus extends Nexus {

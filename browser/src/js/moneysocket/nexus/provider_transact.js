@@ -2,13 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Timestamp = require('../../utl/timestamp.js').Timestamp;
-const Nexus = require("../nexus.js").Nexus;
+const Timestamp = require('../utl/timestamp.js').Timestamp;
+const Nexus = require("./nexus.js").Nexus;
 
 const NotifyInvoice = require(
-    "../../message/notification/invoice.js").NotifyInvoice;
+    "../message/notification/invoice.js").NotifyInvoice;
 const NotifyPreimage = require(
-    "../../message/notification/preimage.js").NotifyPreimage;
+    "../message/notification/preimage.js").NotifyPreimage;
 
 
 const LAYER_REQUESTS = new Set(["REQUEST_PAY",

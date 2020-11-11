@@ -6,8 +6,6 @@ const DomUtl = require('./ui/domutl.js').DomUtl;
 
 const Uuid = require('./moneysocket/utl/uuid.js').Uuid;
 const Timestamp = require('./moneysocket/utl/timestamp.js').Timestamp;
-const WebsocketLocation = require(
-    './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 
 const BuyerUi = require('./buyer/ui.js').BuyerUi;
 

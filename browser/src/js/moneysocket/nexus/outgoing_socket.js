@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const BinUtl = require('../../utl/bin.js').BinUtl;
-const Uuid = require('../../utl/uuid.js').Uuid;
+const BinUtl = require('../utl/bin.js').BinUtl;
+const Uuid = require('../utl/uuid.js').Uuid;
 
-const MoneysocketCodec = require('../../message/codec.js').MoneysocketCodec;
+const MoneysocketCodec = require('../message/codec.js').MoneysocketCodec;
 
 class OutgoingSocket {
     // Make the native WebSocket class look like a Nexus to be passed

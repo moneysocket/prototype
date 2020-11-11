@@ -7,10 +7,6 @@ const Uuid = require('./moneysocket/utl/uuid.js').Uuid;
 const Bolt11 = require('./moneysocket/utl/bolt11.js').Bolt11;
 
 const Timestamp = require('./moneysocket/utl/timestamp.js').Timestamp;
-const WebsocketInterconnect = require(
-    './moneysocket/socket/websocket.js').WebsocketInterconnect;
-const WebsocketLocation = require(
-    './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 
 const ConnectUi = require('./ui/connect.js').ConnectUi;
 const SellerConnectUi = require('./seller/connect_ui.js').SellerConnectUi;

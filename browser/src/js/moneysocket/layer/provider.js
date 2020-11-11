@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Layer =  require("../layer.js").Layer;
-const ProviderNexus = require("./nexus.js").ProviderNexus;
+const Layer = require("./layer.js").Layer;
+const ProviderNexus = require("../nexus/provider.js").ProviderNexus;
 
 class ProviderLayer extends Layer {
     constructor() {

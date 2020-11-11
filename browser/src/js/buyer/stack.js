@@ -6,15 +6,15 @@ const WebsocketLocation = require(
     '../moneysocket/beacon/location/websocket.js').WebsocketLocation;
 
 const OutgoingWebsocketLayer = require(
-    "../moneysocket/protocol/websocket/outgoing_layer.js")
+    "../moneysocket/layer/outgoing_websocket.js")
         .OutgoingWebsocketLayer;
 const OutgoingRendezvousLayer = require(
-    "../moneysocket/protocol/rendezvous/outgoing_layer.js")
+    "../moneysocket/layer/outgoing_rendezvous.js")
         .OutgoingRendezvousLayer;
 const ConsumerLayer = require(
-    "../moneysocket/protocol/consumer/layer.js").ConsumerLayer;
+    "../moneysocket/layer/consumer.js").ConsumerLayer;
 const ConsumerTransactLayer = require(
-    "../moneysocket/protocol/transact/consumer_layer.js").ConsumerTransactLayer;
+    "../moneysocket/layer/consumer_transact.js").ConsumerTransactLayer;
 const BuyerLayer = require("../buyer/layer.js").BuyerLayer;
 
 class BuyerStack {
