@@ -89,8 +89,8 @@ class SellerApp {
         s.onping = (function(msecs) {
             this.consumerOnPing(msecs);
         }).bind(this);
-        s.onbolt11 = (function(bolt11, request_reference_uuid) {
-            this.consumerOnBolt11(bolt11, request_reference_uuid);
+        s.oninvoice = (function(bolt11, request_reference_uuid) {
+            this.consumerOnInvoice(bolt11, request_reference_uuid);
         }).bind(this);
         s.onpreimage = (function(preimage, request_reference_uuid) {
             this.consumerOnPreimage(preimage, request_reference_uuid);
@@ -228,7 +228,7 @@ class SellerApp {
         this.consumer_ui.postStackEvent(layer_name, status);
     }
 
-    consumerOnBolt11(bolt11, request_reference_uuid) {
+    consumerOnInvoice(bolt11, request_reference_uuid) {
         //console.log("got invoice from consumer: " + request_reference_uuid);
         //console.log("payment hash: " + Bolt11.getPaymentHash(bolt11));
         if (! (request_reference_uuid in this.requested_items)) {

@@ -11,7 +11,7 @@ class ConsumerTransactLayer extends ProtocolLayer {
     constructor(below_layer) {
         super(below_layer);
 
-        this.onbolt11 = null;
+        this.oninvoice = null;
         this.onpreimage = null;
     }
 
@@ -19,8 +19,8 @@ class ConsumerTransactLayer extends ProtocolLayer {
 
     setupConsumerTransactNexus(below_nexus) {
         var n = new ConsumerTransactNexus(below_nexus, this);
-        n.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
-            this.onBolt11(nexus, bolt11, request_reference_uuid);
+        n.oninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.onInvoice(nexus, bolt11, request_reference_uuid);
         }).bind(this);
         n.onpreimage = (function(nexus, preimage, request_reference_uuid) {
             this.onPreimage(nexus, preimage, request_reference_uuid);
@@ -45,10 +45,10 @@ class ConsumerTransactLayer extends ProtocolLayer {
 
     ///////////////////////////////////////////////////////////////////////////
 
-    onBolt11(consumer_transact_nexus, bolt11, request_reference_uuid) {
-        if (this.onbolt11 != null) {
-            this.onbolt11(consumer_transact_nexus, bolt11,
-                          request_reference_uuid);
+    onInvoice(consumer_transact_nexus, bolt11, request_reference_uuid) {
+        if (this.oninvoice != null) {
+            this.oninvoice(consumer_transact_nexus, bolt11,
+                           request_reference_uuid);
         }
     }
 

@@ -20,7 +20,7 @@ class ConsumerStack {
         this.onproviderinfo = null;
         this.onstackevent = null;
         this.onping = null;
-        this.onbolt11 = null;
+        this.oninvoice = null;
         this.onpreimage = null;
 
         this.websocket_layer = this.setupOutgoingWebsocketLayer(null);
@@ -50,8 +50,8 @@ class ConsumerStack {
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
         }).bind(this);
-        l.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
-            this.onBolt11(nexus, bolt11, request_reference_uuid);
+        l.oninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.onInvoice(nexus, bolt11, request_reference_uuid);
         }).bind(this);
         l.onpreimage = (function(nexus, preimage, request_reference_uuid) {
             this.onPreimage(nexus, preimage, request_reference_uuid);
@@ -96,9 +96,9 @@ class ConsumerStack {
     // transact layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    onBolt11(transact_nexus, bolt11, request_reference_uuid) {
-        if (this.onbolt11 != null) {
-            this.onbolt11(bolt11, request_reference_uuid);
+    onInvoice(transact_nexus, bolt11, request_reference_uuid) {
+        if (this.oninvoice != null) {
+            this.oninvoice(bolt11, request_reference_uuid);
         }
     }
 

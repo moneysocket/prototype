@@ -73,8 +73,8 @@ class WalletApp {
         s.onping = (function(msecs) {
             this.consumerOnPing(msecs);
         }).bind(this);
-        s.onbolt11 = (function(bolt11, request_reference_uuid) {
-            this.consumerOnBolt11(bolt11, request_reference_uuid);
+        s.oninvoice = (function(bolt11, request_reference_uuid) {
+            this.consumerOnInvoice(bolt11, request_reference_uuid);
         }).bind(this);
         s.onpreimage = (function(preimage, request_reference_uuid) {
             this.consumerOnPreimage(preimage, request_reference_uuid);
@@ -125,7 +125,7 @@ class WalletApp {
         this.wallet_ui.pingUpdate(msecs);
     }
 
-    consumerOnBolt11(bolt11, request_reference_uuid) {
+    consumerOnInvoice(bolt11, request_reference_uuid) {
         console.log("got invoice from consumer: " + request_reference_uuid);
         if (! this.requests_from_provider.has(request_reference_uuid)) {
             this.wallet_ui.notifyInvoice(bolt11);

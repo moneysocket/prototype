@@ -18,7 +18,7 @@ class ConsumerTransactNexus extends ProtocolNexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
 
-        this.onbolt11 = null;
+        this.oninvoice = null;
         this.onpreimage = null;
     }
 
@@ -26,8 +26,8 @@ class ConsumerTransactNexus extends ProtocolNexus {
 
     handleLayerNotification(msg) {
         if (msg['notification_name'] == "NOTIFY_INVOICE") {
-            if (this.onbolt11 != null) {
-                this.onbolt11(this, msg['bolt11'],
+            if (this.oninvoice != null) {
+                this.oninvoice(this, msg['bolt11'],
                               msg['request_reference_uuid']);
             }
         }

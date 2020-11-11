@@ -77,7 +77,7 @@ class BuyerStack {
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
         }).bind(this);
-        l.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
+        l.oninvoice = (function(nexus, bolt11, request_reference_uuid) {
             this.onInvoice(nexus, bolt11, request_reference_uuid);
         }).bind(this);
         l.onpreimage = (function(nexus, preimage, request_reference_uuid) {

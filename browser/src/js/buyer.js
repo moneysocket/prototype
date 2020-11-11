@@ -92,8 +92,8 @@ class BuyerApp {
         s.onping = (function(msecs) {
             this.consumerOnPing(msecs);
         }).bind(this);
-        s.onbolt11 = (function(bolt11, request_reference_uuid) {
-            this.consumerOnBolt11(bolt11, request_reference_uuid);
+        s.oninvoice = (function(bolt11, request_reference_uuid) {
+            this.consumerOnInvoice(bolt11, request_reference_uuid);
         }).bind(this);
         s.onpreimage = (function(preimage, request_reference_uuid) {
             this.consumerOnPreimage(preimage, request_reference_uuid);
@@ -149,7 +149,7 @@ class BuyerApp {
         this.wallet_ui.postStackEvent(layer_name, status);
     }
 
-    consumerOnBolt11(bolt11, request_reference_uuid) {
+    consumerOnInvoice(bolt11, request_reference_uuid) {
         // should not happen
     }
 
