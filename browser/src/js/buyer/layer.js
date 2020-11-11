@@ -50,9 +50,9 @@ class BuyerLayer extends ProtocolLayer {
         this._trackNexusAnnounced(buyer_nexus);
         this.sendLayerEvent(buyer_nexus, "NEXUS_ANNOUNCED");
         console.log("announcing from buyer layer");
-        if (this.onnexusonline != null) {
+        if (this.onannounce != null) {
             console.log("actually announcing from buyer layer");
-            this.onnexusonline(buyer_nexus);
+            this.onannounce(buyer_nexus);
         }
     }
 

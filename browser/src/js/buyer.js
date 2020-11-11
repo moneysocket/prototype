@@ -42,11 +42,11 @@ class BuyerApp {
 
     setupBuyerStack() {
         var s = new BuyerStack();
-        s.onnexusonline = (function(nexus) {
-            this.buyerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.buyerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.buyerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.buyerOnRevoke(nexus);
         }).bind(this);
         s.onproviderinfo = (function(provider_info) {
             this.buyerOnProviderInfo(provider_info);
@@ -77,11 +77,11 @@ class BuyerApp {
 
     setupConsumerStack() {
         var s = new ConsumerStack();
-        s.onnexusonline = (function(nexus) {
-            this.consumerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.consumerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.consumerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.consumerOnRevoke(nexus);
         }).bind(this);
         s.onproviderinfo = (function(provider_info) {
             this.consumerOnProviderInfo(provider_info);
@@ -128,11 +128,11 @@ class BuyerApp {
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    consumerOnNexusOnline(nexus) {
+    consumerOnAnnounce(nexus) {
         this.buyer_app_ui.consumerOnline();
     }
 
-    consumerOnNexusOffline(nexus) {
+    consumerOnRevoke(nexus) {
         this.buyer_app_ui.consumerOffline();
         this.buyer_stack.doDisconnect();
     }
@@ -162,12 +162,12 @@ class BuyerApp {
     ///////////////////////////////////////////////////////////////////////////
 
 
-    buyerOnNexusOnline(nexus) {
+    buyerOnAnnounce(nexus) {
         this.buyer_app_ui.sellerOnline();
         this.buyer_app_ui.logPrint("connect to seller!");
     }
 
-    buyerOnNexusOffline(nexus) {
+    buyerOnRevoke(nexus) {
         this.buyer_app_ui.sellerOffline();
     }
 

@@ -25,8 +25,8 @@ class OutgoingRendezvousLayer extends ProtocolLayer {
 
     rendezvousFinishedCb(rendezvous_nexus) {
         this._trackNexusAnnounced(rendezvous_nexus);
-        if (this.onnexusonline != null) {
-            this.onnexusonline(rendezvous_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(rendezvous_nexus);
         }
     }
 

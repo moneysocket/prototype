@@ -36,8 +36,8 @@ class ConsumerLayer extends ProtocolLayer {
     consumerFinishedCb(consumer_nexus) {
         this._trackNexusAnnounced(consumer_nexus);
         this.sendLayerEvent(consumer_nexus, "NEXUS_ANNOUNCED");
-        if (this.onnexusonline != null) {
-            this.onnexusonline(consumer_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(consumer_nexus);
         }
         consumer_nexus.startPinging();
     }

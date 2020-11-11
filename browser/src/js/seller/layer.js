@@ -45,8 +45,8 @@ class SellerLayer extends ProtocolLayer {
     sellerFinishedCb(seller_nexus) {
         this._trackNexusAnnounced(seller_nexus);
         this.sendLayerEvent(seller_nexus, "NEXUS_ANNOUNCED");
-        if (this.onnexusonline != null) {
-            this.onnexusonline(seller_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(seller_nexus);
         }
     }
 

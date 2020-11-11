@@ -32,8 +32,8 @@ class ProviderTransactLayer extends ProtocolLayer {
             below_nexus);
         this._trackNexus(provider_transact_nexus, below_nexus);
         this._trackNexusAnnounced(provider_transact_nexus);
-        if (this.onnexusonline != null) {
-            this.onnexusonline(provider_transact_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(provider_transact_nexus);
         }
     }
 

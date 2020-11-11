@@ -31,15 +31,12 @@ class ConsumerTransactLayer extends ProtocolLayer {
     ///////////////////////////////////////////////////////////////////////////
 
     announceNexus(below_nexus) {
-        console.log("consumer transact layer got nexus");
         var consumer_transact_nexus = this.setupConsumerTransactNexus(
             below_nexus);
         this._trackNexus(consumer_transact_nexus, below_nexus);
         this._trackNexusAnnounced(consumer_transact_nexus);
-        if (this.onnexusonline != null) {
-            console.log("consumer transact announced nexues");
-            this.onnexusonline(consumer_transact_nexus);
-            console.log("consumer transact finished announcing nexues");
+        if (this.onannounce != null) {
+            this.onannounce(consumer_transact_nexus);
         }
     }
 

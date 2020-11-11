@@ -15,8 +15,8 @@ const ConsumerTransactLayer = require(
 
 class ConsumerStack {
     constructor() {
-        this.onnexusonline = null;
-        this.onnexusoffline = null;
+        this.onannounce = null;
+        this.onrevoke = null;
         this.onproviderinfo = null;
         this.onstackevent = null;
         this.onping = null;
@@ -30,10 +30,10 @@ class ConsumerStack {
         this.transact_layer = this.setupConsumerTransactLayer(
             this.consumer_layer);
 
-        this.transact_layer.onnexusonline = (function(nexus) {
+        this.transact_layer.onannounce = (function(nexus) {
             this.announceNexus(nexus);
         }).bind(this);
-        this.transact_layer.onnexusoffline = (function(nexus) {
+        this.transact_layer.onrevoke = (function(nexus) {
             this.revokeNexus(nexus);
         }).bind(this);
 
@@ -136,8 +136,8 @@ class ConsumerStack {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
 
-        if (this.onnexusonline != null) {
-            this.onnexusonline(below_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(below_nexus);
         }
     }
 
@@ -146,8 +146,8 @@ class ConsumerStack {
         this.nexus = null;
         this.shared_seed = null;
 
-        if (this.onnexusoffline != null) {
-            this.onnexusoffline(below_nexus);
+        if (this.onrevoke != null) {
+            this.onrevoke(below_nexus);
         }
     }
 

@@ -22,8 +22,8 @@ class SellerStack {
         this.app = app;
         this.ui = ui;
 
-        this.onnexusonline = null;
-        this.onnexusoffline = null;
+        this.onannounce = null;
+        this.onrevoke = null;
         this.onstackevent = null;
         this.handleinvoicerequest = null;
         this.handlepayrequest = null;
@@ -39,10 +39,10 @@ class SellerStack {
             this.provider_layer);
         this.seller_layer = this.setupSellerLayer(this.transact_layer);
 
-        this.seller_layer.onnexusonline = (function(nexus) {
+        this.seller_layer.onannounce = (function(nexus) {
             this.announceNexus(nexus);
         }).bind(this);
-        this.seller_layer.onnexusoffline = (function(nexus) {
+        this.seller_layer.onrevoke = (function(nexus) {
             this.revokeNexus(nexus);
         }).bind(this);
 
@@ -149,8 +149,8 @@ class SellerStack {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
 
-        if (this.onnnexusonline != null) {
-            this.onnexusonline(below_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(below_nexus);
         }
     }
 
@@ -158,8 +158,8 @@ class SellerStack {
         console.log("provider stack got nexus revoked");
         this.nexus = null;
         this.shared_seed = null;
-        if (this.onnnexusoffline != null) {
-            this.onnexusoffline(below_nexus);
+        if (this.onrevoke != null) {
+            this.orevoke(below_nexus);
         }
     }
 

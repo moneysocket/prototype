@@ -49,11 +49,11 @@ class SellerApp {
 
     setupSellerStack() {
         var s = new SellerStack();
-        s.onnexusonline = (function(nexus) {
-            this.sellerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.sellerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.sellerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.sellerOnRevoke(nexus);
         }).bind(this);
         s.onstackevent = (function(layer_name, nexus, status) {
             this.sellerOnStackEvent(layer_name, nexus, status);
@@ -74,11 +74,11 @@ class SellerApp {
 
     setupConsumerStack() {
         var s = new ConsumerStack();
-        s.onnexusonline = (function(nexus) {
-            this.consumerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.consumerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.consumerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.consumerOnRevoke(nexus);
         }).bind(this);
         s.onproviderinfo = (function(provider_info) {
             this.consumerOnProviderInfo(provider_info);
@@ -195,11 +195,11 @@ class SellerApp {
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    consumerOnNexusOnline(nexus) {
+    consumerOnAnnounce(nexus) {
         this.seller_app_ui.consumerOnline();
     }
 
-    consumerOnNexusOffline(nexus) {
+    consumerOnRevoke(nexus) {
         this.seller_wad = null;
         this.provider_info = {'ready': false};
         this.seller_app_ui.consumerOffline();
@@ -310,12 +310,12 @@ class SellerApp {
         }
     }
 
-    sellerOnNexusOnline(nexus) {
+    sellerOnAnnounce(nexus) {
         console.log("---");
         this.seller_app_ui.providerOnline();
     }
 
-    sellerOnNexusOffline() {
+    sellerOnRevoke(nexus) {
         this.seller_app_ui.providerOffline();
     }
 

@@ -35,11 +35,11 @@ class WalletApp {
 
     setupProviderStack() {
         var s = new ProviderStack();
-        s.onnexusonline = (function(nexus) {
-            this.providerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.providerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.providerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.providerOnRevoke(nexus);
         }).bind(this);
         s.onstackevent = (function(layer_name, nexus, status) {
             this.providerOnStackEvent(layer_name, nexus, status);
@@ -58,11 +58,11 @@ class WalletApp {
 
     setupConsumerStack() {
         var s = new ConsumerStack();
-        s.onnexusonline = (function(nexus) {
-            this.consumerOnNexusOnline(nexus);
+        s.onannounce = (function(nexus) {
+            this.consumerOnAnnounce(nexus);
         }).bind(this);
-        s.onnexusoffline = (function(nexus) {
-            this.consumerOnNexusOffline(nexus);
+        s.onrevoke = (function(nexus) {
+            this.consumerOnRevoke(nexus);
         }).bind(this);
         s.onproviderinfo = (function(provider_info) {
             this.consumerOnProviderInfo(provider_info);
@@ -97,11 +97,11 @@ class WalletApp {
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    consumerOnNexusOnline(nexus) {
+    consumerOnAnnounce(nexus) {
         this.wallet_ui.consumerOnline();
     }
 
-    consumerOnNexusOffline(nexus) {
+    consumerOnRevoke(nexus) {
         this.upstream_info = {'ready': false};
         this.wallet_ui.consumerOffline();
     }
@@ -150,11 +150,11 @@ class WalletApp {
     // Provider Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    providerOnNexusOnline(nexus) {
+    providerOnAnnounce(nexus) {
         this.wallet_ui.providerOnline();
     }
 
-    providerOnNexusOffline() {
+    providerOnRevoke() {
         this.wallet_ui.providerOffline();
     }
 

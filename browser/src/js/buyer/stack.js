@@ -21,8 +21,8 @@ class BuyerStack {
     constructor(app) {
         this.app = app;
 
-        this.onnexusonline = null;
-        this.onnexusoffline = null;
+        this.onannounce = null;
+        this.onrevoke = null;
         this.onproviderinfo = null;
         this.onstackevent = null;
         this.onping = null;
@@ -41,10 +41,10 @@ class BuyerStack {
         this.buyer_layer = this.setupBuyerLayer(this.transact_layer);
 
 
-        this.buyer_layer.onnexusonline = (function(nexus) {
+        this.buyer_layer.onannounce = (function(nexus) {
             this.announceNexus(nexus);
         }).bind(this);
-        this.buyer_layer.onnexusoffline = (function(nexus) {
+        this.buyer_layer.onrevoke = (function(nexus) {
             this.revokeNexus(nexus);
         }).bind(this);
 
@@ -186,9 +186,9 @@ class BuyerStack {
         this.shared_seed = buyer_nexus.getSharedSeed();
 
         console.log("got buyer nexus");
-        if (this.onnexusonline != null) {
+        if (this.onannounce != null) {
             console.log("announce buyer nexus");
-            this.onnexusonline(buyer_nexus);
+            this.onannounce(buyer_nexus);
         }
     }
 
@@ -196,8 +196,8 @@ class BuyerStack {
         this.nexus = null;
         this.shared_seed = null;
         console.log("lost buyer nexus");
-        if (this.onnexusoffline != null) {
-            this.onnexusoffline(buyer_nexus);
+        if (this.onrevoke != null) {
+            this.onrevoke(buyer_nexus);
         }
     }
 

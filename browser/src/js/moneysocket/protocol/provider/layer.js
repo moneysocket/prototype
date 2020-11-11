@@ -40,8 +40,8 @@ class ProviderLayer extends ProtocolLayer {
     providerFinishedCb(provider_nexus) {
         this._trackNexusAnnounced(provider_nexus);
         this.sendLayerEvent(provider_nexus, "NEXUS_ANNOUNCED");
-        if (this.onnexusonline != null) {
-            this.onnexusonline(provider_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(provider_nexus);
         }
     }
 

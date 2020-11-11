@@ -6,8 +6,8 @@
 class ProtocolLayer {
     constructor() {
         this.onlayerevent = null;
-        this.onnexusonline = null;
-        this.onnexusoffline = null;
+        this.onannounce = null;
+        this.onrevoke = null;
 
         this.nexuses = {};
         this.below_nexuses = {};
@@ -19,10 +19,10 @@ class ProtocolLayer {
     ///////////////////////////////////////////////////////////////////////////
 
     registerAboveLayer(below_layer) {
-        below_layer.onnexusonline = (function(nexus) {
+        below_layer.onannounce = (function(nexus) {
             this.announceNexus(nexus);
         }).bind(this);
-        below_layer.onnexusoffline = (function(nexus) {
+        below_layer.onrevoke = (function(nexus) {
             this.revokeNexus(nexus);
         }).bind(this);
     }
@@ -71,8 +71,8 @@ class ProtocolLayer {
         if (this._isNexusAnnounced(nexus)) {
             this._trackNexusRevoked(nexus);
 
-            if (this.onnexusoffline != null) {
-                this.onnexusoffline(nexus);
+            if (this.onrevoke != null) {
+                this.onrevoke(nexus);
             }
             this.sendLayerEvent(nexus, "NEXUS_REVOKED");
         }

@@ -21,8 +21,8 @@ class OutgoingWebsocketLayer extends ProtocolLayer {
         var shared_seed = websocket_nexus.getSharedSeed();
         this.nexus_by_shared_seed[shared_seed] = websocket_nexus;
         this.sendLayerEvent(websocket_nexus, "NEXUS_ANNOUNCED");
-        if (this.onnexusonline != null) {
-            this.onnexusonline(websocket_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(websocket_nexus);
         }
     }
 

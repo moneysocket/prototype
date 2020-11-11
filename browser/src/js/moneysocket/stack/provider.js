@@ -16,8 +16,8 @@ const ProviderTransactLayer = require(
 
 class ProviderStack {
     constructor() {
-        this.onnexusonline = null;
-        this.onnexusoffline = null;
+        this.onannounce = null;
+        this.onrevoke = null;
         this.onstackevent = null;
         this.handleinvoicerequest = null;
         this.handlepayrequest = null;
@@ -30,10 +30,10 @@ class ProviderStack {
         this.transact_layer = this.setupProviderTransactLayer(
             this.provider_layer);
 
-        this.transact_layer.onnexusonline = (function(nexus) {
+        this.transact_layer.onannounce = (function(nexus) {
             this.announceNexus(nexus);
         }).bind(this);
-        this.transact_layer.onnexusoffline = (function(nexus) {
+        this.transact_layer.onrevoke = (function(nexus) {
             this.revokeNexus(nexus);
         }).bind(this);
 
@@ -117,8 +117,8 @@ class ProviderStack {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
 
-        if (this.onnnexusonline != null) {
-            this.onnexusonline(below_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(below_nexus);
         }
     }
 
@@ -127,8 +127,8 @@ class ProviderStack {
         this.nexus = null;
         this.shared_seed = null;
 
-        if (this.onnnexusoffline != null) {
-            this.onnexusoffline(below_nexus);
+        if (this.onrevoke != null) {
+            this.onrevoke(below_nexus);
         }
     }
 
