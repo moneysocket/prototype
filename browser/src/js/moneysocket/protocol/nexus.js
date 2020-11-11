@@ -4,7 +4,7 @@
 
 const Uuid = require('../utl/uuid.js').Uuid;
 
-class ProtocolNexus {
+class Nexus {
     constructor(below_nexus, layer) {
         this.uuid = Uuid.uuidv4();
         this.below_nexus = below_nexus;
@@ -88,4 +88,4 @@ class ProtocolNexus {
 }
 
 
-exports.ProtocolNexus = ProtocolNexus;
+exports.Nexus = Nexus;

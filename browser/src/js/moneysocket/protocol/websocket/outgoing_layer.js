@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
+const Layer =  require("../layer.js").Layer;
 const WebsocketNexus = require("./nexus.js").WebsocketNexus;
 const OutgoingSocket = require("./outgoing_socket.js").OutgoingSocket;
 
 
-class OutgoingWebsocketLayer extends ProtocolLayer {
+class OutgoingWebsocketLayer extends Layer {
     constructor() {
         super();
         this.nexus_by_shared_seed = {};

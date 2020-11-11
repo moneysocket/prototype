@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolNexus = require("../nexus.js").ProtocolNexus;
+const Nexus = require("../nexus.js").Nexus;
 
 const RequestRendezvous = require(
     "../../message/request/rendezvous.js").RequestRendezvous;
@@ -13,7 +13,7 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_RENDEZVOUS",
                                      "NOTIFY_RENDEZVOUS_END",
                                    ]);
 
-class OutgoingRendezvousNexus extends ProtocolNexus {
+class OutgoingRendezvousNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
         this.rendezvousFinishedCb = null;

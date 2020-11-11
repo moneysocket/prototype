@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const Timestamp = require('../../utl/timestamp.js').Timestamp;
-const ProtocolNexus = require("../nexus.js").ProtocolNexus;
+const Nexus = require("../nexus.js").Nexus;
 
 const NotifyInvoice = require(
     "../../message/notification/invoice.js").NotifyInvoice;
@@ -15,7 +15,7 @@ const LAYER_REQUESTS = new Set(["REQUEST_PAY",
                                 "REQUEST_INVOICE",
                                ]);
 
-class ProviderTransactNexus extends ProtocolNexus {
+class ProviderTransactNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
         this.handleinvoicerequest = null;

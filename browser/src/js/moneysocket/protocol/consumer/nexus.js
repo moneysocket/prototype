@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const Timestamp = require('../../utl/timestamp.js').Timestamp;
-const ProtocolNexus = require("../nexus.js").ProtocolNexus;
+const Nexus = require("../nexus.js").Nexus;
 
 const RequestProvider = require(
     "../../message/request/provider.js").RequestProvider;
@@ -15,7 +15,7 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_PROVIDER",
                                      "NOTIFY_PONG",
                                    ]);
 
-class ConsumerNexus extends ProtocolNexus {
+class ConsumerNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
 

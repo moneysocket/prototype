@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-class ProtocolLayer {
+class Layer {
     constructor() {
         this.onlayerevent = null;
         this.onannounce = null;
@@ -95,4 +95,4 @@ class ProtocolLayer {
 
 }
 
-exports.ProtocolLayer = ProtocolLayer;
+exports.Layer = Layer;

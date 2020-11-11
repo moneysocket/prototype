@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolNexus = require("../moneysocket/protocol/nexus.js").ProtocolNexus;
+const Nexus = require("../moneysocket/protocol/nexus.js").Nexus;
 
 
 const RequestOpinionSeller = require(
@@ -24,7 +24,7 @@ const LAYER_REQUESTS = new Set(["REQUEST_OPINION_SELLER",
                                ]);
 
 
-class SellerNexus extends ProtocolNexus {
+class SellerNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
 

@@ -2,13 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
+const Layer =  require("../layer.js").Layer;
 const ProviderTransactNexus = require(
     "./provider_nexus.js").ProviderTransactNexus;
 
 
 
-class ProviderTransactLayer extends ProtocolLayer {
+class ProviderTransactLayer extends Layer {
     constructor() {
         super();
         this.handleinvoicerequest = null;

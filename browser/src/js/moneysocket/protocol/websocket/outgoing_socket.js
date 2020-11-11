@@ -8,7 +8,7 @@ const Uuid = require('../../utl/uuid.js').Uuid;
 const MoneysocketCodec = require('../../message/codec.js').MoneysocketCodec;
 
 class OutgoingSocket {
-    // Make the native WebSocket class look like a ProtocolNexus to be passed
+    // Make the native WebSocket class look like a Nexus to be passed
     // upwards
     constructor(websocket_location, shared_seed, layer) {
         this.websocket_location = websocket_location;

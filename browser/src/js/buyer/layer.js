@@ -4,12 +4,11 @@
 
 
 
-const ProtocolLayer = require(
-    "../moneysocket/protocol/layer.js").ProtocolLayer;
+const Layer = require("../moneysocket/protocol/layer.js").Layer;
 const BuyerNexus = require("./nexus.js").BuyerNexus;
 
 
-class BuyerLayer extends ProtocolLayer {
+class BuyerLayer extends Layer {
     constructor() {
         super();
 

@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
+const Layer = require("../layer.js").Layer;
 const ConsumerTransactNexus = require(
     "./consumer_nexus.js").ConsumerTransactNexus;
 
 
-class ConsumerTransactLayer extends ProtocolLayer {
+class ConsumerTransactLayer extends Layer {
     constructor(below_layer) {
         super(below_layer);
 

@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolNexus = require("../nexus.js").ProtocolNexus;
+const Nexus = require("../nexus.js").Nexus;
 
 const NotifyPong = require("../../message/notification/pong.js").NotifyPong;
 const NotifyProviderNotReady = require(
@@ -16,7 +16,7 @@ const LAYER_REQUESTS = new Set(["REQUEST_PROVIDER",
                                ]);
 
 
-class ProviderNexus extends ProtocolNexus {
+class ProviderNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
         this.provider_finished_cb = null;

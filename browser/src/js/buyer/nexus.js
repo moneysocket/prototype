@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const Timestamp = require('../moneysocket/utl/timestamp.js').Timestamp;
-const ProtocolNexus = require("../moneysocket/protocol/nexus.js").ProtocolNexus;
+const Nexus = require("../moneysocket/protocol/nexus.js").Nexus;
 
 const RequestOpinionSeller = require(
     "./request_opinion_seller.js").RequestOpinionSeller;
@@ -24,7 +24,7 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_OPINION_SELLER",
                                      "NOTIFY_OPINION",
                                    ]);
 
-class BuyerNexus extends ProtocolNexus {
+class BuyerNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
 
