@@ -21,90 +21,190 @@ class BuyerStack {
     constructor(app) {
         this.app = app;
 
-        console.assert(typeof app.buyerOnlineCb == 'function');
-        console.assert(typeof app.buyerOfflineCb == 'function');
-        console.assert(typeof app.buyerReportProviderInfoCb == 'function');
-        console.assert(typeof app.buyerReportPingCb == 'function');
-        console.assert(typeof app.buyerPostStackEventCb == 'function');
+        this.onnexusonline = null;
+        this.onnexusoffline = null;
+        this.onproviderinfo = null;
+        this.onstackevent = null;
+        this.onping = null;
+        this.oninvoice = null;
+        this.onpreimage = null;
+        this.onsellerinfo = null;
+        this.onopinioninvoice = null;
+        this.onopinion = null;
 
-        console.assert(typeof app.buyerReportBolt11Cb == 'function');
-        console.assert(typeof app.buyerReportPreimageCb == 'function');
+        this.websocket_layer = this.setupOutgoingWebsocketLayer();
+        this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.websocket_layer);
+        this.consumer_layer = this.setupConsumerLayer(this.rendezvous_layer);
+        this.transact_layer = this.setupConsumerTransactLayer(
+            this.consumer_layer);
+        this.buyer_layer = this.setupBuyerLayer(this.transact_layer);
 
-        console.assert(typeof app.buyerReportSellerInfoCb == 'function');
-        console.assert(typeof app.buyerReportOpinionInvoiceCb == 'function');
-        console.assert(typeof app.buyerReportOpinionCb == 'function');
 
-        this.buyer_layer = new BuyerLayer(this, this);
-        this.transact_layer = new ConsumerTransactLayer(this, this.buyer_layer);
-        this.consumer_layer = new ConsumerLayer(this, this.transact_layer);
-        this.rendezvous_layer = new OutgoingRendezvousLayer(
-            this, this.consumer_layer);
-        this.websocket_layer = new OutgoingWebsocketLayer(
-            this, this.rendezvous_layer);
+        this.buyer_layer.onnexusonline = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        this.buyer_layer.onnexusoffline = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
 
     }
+
+    //////////////////////////////////////////////////////////////////////////
+    // setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupBuyerLayer(below_layer) {
+        var l = new BuyerLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("BUYER", nexus, status);
+        }).bind(this);
+        l.onsellerinfo = (function(nexus, seller_info) {
+            this.onSellerInfo(nexus, seller_info);
+        }).bind(this);
+        l.onopinioninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.onOpinionInvoice(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        l.onopinion = (function(nexus, item_id, opinion) {
+            this.onOpinion(nexus, item_id, opinion);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupConsumerTransactLayer(below_layer) {
+        var l = new ConsumerTransactLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
+        }).bind(this);
+        l.onbolt11 = (function(nexus, bolt11, request_reference_uuid) {
+            this.onInvoice(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        l.onpreimage = (function(nexus, preimage, request_reference_uuid) {
+            this.onPreimage(nexus, preimage, request_reference_uuid);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupConsumerLayer(below_layer) {
+        var l = new ConsumerLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER", nexus, status);
+        }).bind(this);
+        l.onproviderinfo = (function(nexus, msg) {
+            this.onProviderInfo(nexus, msg);
+        }).bind(this);
+        l.onping = (function(nexus, msecs) {
+            this.onPing(nexus, msecs);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingRendezvousLayer(below_layer) {
+        var l = new OutgoingRendezvousLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingWebsocketLayer() {
+        var l = new OutgoingWebsocketLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
+        }).bind(this);
+        return l;
+    }
+
     //////////////////////////////////////////////////////////////////////////
     // buyer layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    gotOpinionInvoiceCb(buyer_nexus, bolt11, request_reference_uuid) {
-        this.app.buyerReportOpinionInvoiceCb(bolt11, request_reference_uuid);
+    onOpinionInvoice(buyer_nexus, bolt11, request_reference_uuid) {
+        if (this.onopinioninvoice != null) {
+            this.onopinioninvoice(bolt11, request_reference_uuid);
+        }
     }
 
-    gotOpinionCb(buyer_nexus, item_id, opinion) {
-        this.app.buyerReportOpinionCb(item_id, opinion);
+    onOpinion(buyer_nexus, item_id, opinion) {
+        if (this.onopinion != null) {
+            this.onopinion(item_id, opinion);
+        }
     }
 
-    gotSellerCb(buyer_nexus, seller_info) {
-        this.app.buyerReportSellerInfoCb(seller_info);
+    onSellerInfo(buyer_nexus, seller_info) {
+        if (this.onsellerinfo != null) {
+            this.onsellerinfo(seller_info);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     // transact layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyInvoiceCb(transact_nexus, bolt11, request_reference_uuid) {
-        this.app.buyerReportBolt11Cb(bolt11, request_reference_uuid);
+    onInvoice(transact_nexus, bolt11, request_reference_uuid) {
+        if (this.oninvoice != null) {
+            this.oninvoice(bolt11, request_reference_uuid);
+        }
     }
 
-    notifyPreimageCb(transact_nexus, preimage, request_reference_uuid) {
-        this.app.buyerReportPreimageCb(preimage, request_reference_uuid);
+    onPreimage(transact_nexus, preimage, request_reference_uuid) {
+        if (this.onpreimage != null) {
+            this.onpreimage(preimage, request_reference_uuid);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     // consumer layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyProviderCb(consumer_nexus, msg) {
+    onProviderInfo(consumer_nexus, msg) {
         var provider_info = {'payer':         msg['payer'],
                              'payee':         msg['payee'],
                              'msats':         msg['msats'],
                              'provider_uuid': msg['provider_uuid']};
-        this.app.buyerReportProviderInfoCb(provider_info);
+        if (this.onproviderinfo != null) {
+            this.onproviderinfo(provider_info);
+        }
     }
 
-    notifyPingCb(consumer_nexus, msecs) {
-        this.app.buyerReportPingCb(msecs);
+    onPing(consumer_nexus, msecs) {
+        if (this.onping != null) {
+        this.onping(msecs);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     // layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
-        this.nexus = below_nexus;
-        this.shared_seed = below_nexus.getSharedSeed();
-        this.app.buyerOnlineCb();
+    announceNexus(buyer_nexus) {
+        this.nexus = buyer_nexus;
+        this.shared_seed = buyer_nexus.getSharedSeed();
+
+        console.log("got buyer nexus");
+        if (this.onnexusonline != null) {
+            console.log("announce buyer nexus");
+            this.onnexusonline(buyer_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(buyer_nexus) {
         this.nexus = null;
         this.shared_seed = null;
-        this.app.buyerOfflineCb();
+        console.log("lost buyer nexus");
+        if (this.onnexusoffline != null) {
+            this.onnexusoffline(buyer_nexus);
+        }
     }
 
-    postLayerStackEventCb(layer_name, nexus, status) {
-        this.app.buyerPostStackEventCb(layer_name, status);
+    onLayerEvent(layer_name, nexus, status) {
+        if (this.onstackevent != null) {
+            this.onstackevent(layer_name, nexus, status);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -128,16 +228,6 @@ class BuyerStack {
         console.log("buyer stack disconnect called");
         this.websocket_layer.initiateCloseAll();
     }
-
-    /*
-    requestInvoice(msats, override_request_uuid) {
-        this.nexus.requestInvoice(msats, override_request_uuid);
-    }
-
-    requestPay(bolt11, override_request_uuid) {
-        this.nexus.requestPay(bolt11, override_request_uuid);
-    }
-    */
 
     buyItem(item_id) {
         this.nexus.requestOpinionInvoice(item_id);

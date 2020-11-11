@@ -81,7 +81,7 @@ class ProviderStack {
         return l;
     }
 
-    setupOutgoingWebsocketLayer(below_layer) {
+    setupOutgoingWebsocketLayer() {
         var l = new OutgoingWebsocketLayer();
         l.onlayerevent = (function(nexus, status) {
             this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);

@@ -31,14 +31,75 @@ class BuyerApp {
 
         this.buyer_app_ui = new BuyerUi(this.my_div, this);
 
-        this.buyer_stack = new BuyerStack(this);
-        this.buyer_ui = new BuyerConnectUi(this.my_div, "Buyer Consumer",
-                                           this.buyer_stack);
-        this.wallet_stack = new ConsumerStack(this);
+        this.buyer_stack = this.setupBuyerStack();
+        this.wallet_stack = this.setupConsumerStack();
+
         this.wallet_ui = new ConnectUi(this.my_div, "My Wallet Consumer",
                                        this.wallet_stack);
+        this.buyer_ui = new BuyerConnectUi(this.my_div, "Buyer Consumer",
+                                           this.buyer_stack);
     }
 
+    setupBuyerStack() {
+        var s = new BuyerStack();
+        s.onnexusonline = (function(nexus) {
+            this.buyerOnNexusOnline(nexus);
+        }).bind(this);
+        s.onnexusoffline = (function(nexus) {
+            this.buyerOnNexusOffline(nexus);
+        }).bind(this);
+        s.onproviderinfo = (function(provider_info) {
+            this.buyerOnProviderInfo(provider_info);
+        }).bind(this);
+        s.onstackevent = (function(layer_name, nexus, status) {
+            this.buyerOnStackEvent(layer_name, nexus, status);
+        }).bind(this);
+        s.onping = (function(msecs) {
+            this.buyerOnPing(msecs);
+        }).bind(this);
+        s.oninvoice = (function(bolt11, request_reference_uuid) {
+            this.buyerOnInvoice(bolt11, request_reference_uuid);
+        }).bind(this);
+        s.onpreimage = (function(preimage, request_reference_uuid) {
+            this.buyerOnPreimage(preimage, request_reference_uuid);
+        }).bind(this);
+        s.onopinion = (function(nexus, item_id, opinion) {
+            this.buyerOnOpinion(nexus, item_id, opinion);
+        }).bind(this);
+        s.onopinioninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.buyerOnOpinionInvoice(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        s.onsellerinfo = (function(nexus, seller_info) {
+            this.buyerOnSellerInfo(nexus, seller_info);
+        }).bind(this);
+        return s;
+    }
+
+    setupConsumerStack() {
+        var s = new ConsumerStack();
+        s.onnexusonline = (function(nexus) {
+            this.consumerOnNexusOnline(nexus);
+        }).bind(this);
+        s.onnexusoffline = (function(nexus) {
+            this.consumerOnNexusOffline(nexus);
+        }).bind(this);
+        s.onproviderinfo = (function(provider_info) {
+            this.consumerOnProviderInfo(provider_info);
+        }).bind(this);
+        s.onstackevent = (function(layer_name, nexus, status) {
+            this.consumerOnStackEvent(layer_name, nexus, status);
+        }).bind(this);
+        s.onping = (function(msecs) {
+            this.consumerOnPing(msecs);
+        }).bind(this);
+        s.onbolt11 = (function(bolt11, request_reference_uuid) {
+            this.consumerOnBolt11(bolt11, request_reference_uuid);
+        }).bind(this);
+        s.onpreimage = (function(preimage, request_reference_uuid) {
+            this.consumerOnPreimage(preimage, request_reference_uuid);
+        }).bind(this);
+        return s;
+    }
 
     drawBuyerUi() {
         DomUtl.drawTitle(this.my_div, "Opinion Buyer App", "h2");
@@ -67,32 +128,32 @@ class BuyerApp {
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    consumerOnlineCb() {
+    consumerOnNexusOnline(nexus) {
         this.buyer_app_ui.consumerOnline();
     }
 
-    consumerOfflineCb() {
+    consumerOnNexusOffline(nexus) {
         this.buyer_app_ui.consumerOffline();
         this.buyer_stack.doDisconnect();
     }
 
-    consumerReportProviderInfoCb(provider_info) {
+    consumerOnProviderInfo(provider_info) {
         this.buyer_app_ui.balanceUpdate(provider_info);
     }
 
-    consumerReportPingCb(msecs) {
+    consumerOnPing(msecs) {
         this.buyer_app_ui.pingUpdate(msecs);
     }
 
-    consumerPostStackEventCb(layer_name, status) {
+    consumerOnStackEvent(layer_name, nexus, status) {
         this.wallet_ui.postStackEvent(layer_name, status);
     }
 
-    consumerReportBolt11Cb(bolt11, request_reference_uuid) {
+    consumerOnBolt11(bolt11, request_reference_uuid) {
         // should not happen
     }
 
-    consumerReportPreimageCb(preimage, request_reference_uuid) {
+    consumerOnPreimage(preimage, request_reference_uuid) {
         // should not happen
     }
 
@@ -101,45 +162,45 @@ class BuyerApp {
     ///////////////////////////////////////////////////////////////////////////
 
 
-    buyerOnlineCb() {
+    buyerOnNexusOnline(nexus) {
         this.buyer_app_ui.sellerOnline();
         this.buyer_app_ui.logPrint("connect to seller!");
     }
 
-    buyerOfflineCb() {
+    buyerOnNexusOffline(nexus) {
         this.buyer_app_ui.sellerOffline();
     }
 
-    buyerReportProviderInfoCb(provider_info) {
+    buyerOnProviderInfo(provider_info) {
     }
 
-    buyerReportPingCb(msecs) {
+    buyerOnPing(msecs) {
         this.buyer_app_ui.sellerPingUpdate(msecs);
     }
 
-    buyerPostStackEventCb(layer_name, status) {
+    buyerOnStackEvent(layer_name, nexus, status) {
         this.buyer_ui.postStackEvent(layer_name, status);
     }
 
-    buyerReportBolt11Cb(bolt11, request_reference_uuid) {
+    buyerOnInvoice(bolt11, request_reference_uuid) {
         console.log("got invoice from seller: " + request_reference_uuid);
     }
 
-    buyerReportPreimageCb(preimage, request_reference_uuid) {
+    buyerOnPreimage(preimage, request_reference_uuid) {
         console.log("got preimage from seller: " + request_reference_uuid);
     }
 
-    buyerReportSellerInfoCb(seller_info) {
+    buyerOnSellerInfo(seller_info) {
         console.log("got seller info: " + JSON.stringify(seller_info));
         this.buyer_app_ui.displayItemsForSale(seller_info['items']);
     }
 
-    buyerReportOpinionInvoiceCb(bolt11, request_reference_uuid) {
+    buyerOnOpinionInvoice(bolt11, request_reference_uuid) {
         // forward along to wallet
         this.wallet_stack.requestPay(bolt11, request_reference_uuid);
     }
 
-    buyerReportOpinionCb(item_id, opinion) {
+    buyerOnOpinion(item_id, opinion) {
         this.buyer_app_ui.logPrint("got: " + item_id + ": " + opinion);
     }
 

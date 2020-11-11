@@ -26,7 +26,7 @@ class Bolt11 {
 
     static getPaymentHash(bolt11) {
         var decoded = b11.decode(bolt11);
-        console.log("decoded b11: " + JSON.stringify(decoded));
+        //console.log("decoded b11: " + JSON.stringify(decoded));
         var tags = decoded.tags;
 
         for (var i = 0; i < tags.length; i++) {

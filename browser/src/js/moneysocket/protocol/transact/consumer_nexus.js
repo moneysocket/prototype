@@ -33,9 +33,9 @@ class ConsumerTransactNexus extends ProtocolNexus {
         }
         else if (msg['notification_name'] == "NOTIFY_PREIMAGE") {
             console.log("notify preimage: " + JSON.stringify(msg));
-            if (this.preimage != null) {
-                this.preimage(this, msg['preimage'],
-                              msg['request_reference_uuid']);
+            if (this.onpreimage != null) {
+                this.onpreimage(this, msg['preimage'],
+                                msg['request_reference_uuid']);
             }
         }
     }

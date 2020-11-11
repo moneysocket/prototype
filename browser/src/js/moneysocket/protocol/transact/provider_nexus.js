@@ -47,7 +47,7 @@ class ProviderTransactNexus extends ProtocolNexus {
     onMessage(below_nexus, msg) {
         //console.log("provider transact nexus got message");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         this.handleLayerRequest(msg);
