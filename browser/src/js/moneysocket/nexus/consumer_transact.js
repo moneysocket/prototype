@@ -2,36 +2,41 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const Timestamp = require('../../utl/timestamp.js').Timestamp;
-const ProtocolNexus = require("../nexus.js").ProtocolNexus;
+const Timestamp = require('../utl/timestamp.js').Timestamp;
+const Nexus = require("./nexus.js").Nexus;
 
 const RequestInvoice = require(
-    "../../message/request/invoice.js").RequestInvoice;
-const RequestPay = require("../../message/request/pay.js").RequestPay;
+    "../message/request/invoice.js").RequestInvoice;
+const RequestPay = require("../message/request/pay.js").RequestPay;
 
 
 const LAYER_NOTIFICATIONS = new Set(["NOTIFY_INVOICE",
                                      "NOTIFY_PREIMAGE",
                                    ]);
 
-class ConsumerTransactNexus extends ProtocolNexus {
+class ConsumerTransactNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-        console.assert(typeof this.layer.notifyInvoiceCb == 'function');
-        console.assert(typeof this.layer.notifyPreimageCb == 'function');
+
+        this.oninvoice = null;
+        this.onpreimage = null;
     }
 
     ///////////////////////////////////////////////////////////////////////////
 
     handleLayerNotification(msg) {
         if (msg['notification_name'] == "NOTIFY_INVOICE") {
-            this.layer.notifyInvoiceCb(this, msg['bolt11'],
-                                       msg['request_reference_uuid']);
+            if (this.oninvoice != null) {
+                this.oninvoice(this, msg['bolt11'],
+                              msg['request_reference_uuid']);
+            }
         }
         else if (msg['notification_name'] == "NOTIFY_PREIMAGE") {
             console.log("notify preimage: " + JSON.stringify(msg));
-            this.layer.notifyPreimageCb(this, msg['preimage'],
-                                        msg['request_reference_uuid']);
+            if (this.onpreimage != null) {
+                this.onpreimage(this, msg['preimage'],
+                                msg['request_reference_uuid']);
+            }
         }
     }
 
@@ -43,16 +48,16 @@ class ConsumerTransactNexus extends ProtocolNexus {
         return LAYER_NOTIFICATIONS.has(msg['notification_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("transact nexus got message");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         this.handleLayerNotification(msg);
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         //console.log("transact nexus got raw msg from below");
     }
 

@@ -2,26 +2,28 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
-const WebsocketNexus = require("./nexus.js").WebsocketNexus;
-const OutgoingSocket = require("./outgoing_socket.js").OutgoingSocket;
+const Layer =  require("./layer.js").Layer;
+const WebsocketNexus = require("../nexus/websocket.js").WebsocketNexus;
+const OutgoingSocket = require("../nexus/outgoing_socket.js").OutgoingSocket;
 
 
-class OutgoingWebsocketLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer, "OUTGOING_WEBSOCKET");
+class OutgoingWebsocketLayer extends Layer {
+    constructor() {
+        super();
         this.nexus_by_shared_seed = {};
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         var websocket_nexus = new WebsocketNexus(below_nexus, this);
         this._trackNexus(websocket_nexus, below_nexus);
         this._trackNexusAnnounced(websocket_nexus);
 
         var shared_seed = websocket_nexus.getSharedSeed();
         this.nexus_by_shared_seed[shared_seed] = websocket_nexus;
-        this.notifyAppOfStatus(websocket_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(websocket_nexus);
+        this.sendLayerEvent(websocket_nexus, "NEXUS_ANNOUNCED");
+        if (this.onannounce != null) {
+            this.onannounce(websocket_nexus);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

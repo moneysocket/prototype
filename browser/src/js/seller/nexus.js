@@ -2,8 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolNexus = require("../moneysocket/protocol/nexus.js").ProtocolNexus;
-
+const Nexus = require("../moneysocket/nexus/nexus.js").Nexus;
 
 const RequestOpinionSeller = require(
     "../buyer/request_opinion_seller.js").RequestOpinionSeller;
@@ -24,14 +23,15 @@ const LAYER_REQUESTS = new Set(["REQUEST_OPINION_SELLER",
                                ]);
 
 
-class SellerNexus extends ProtocolNexus {
+class SellerNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
+
+        this.handleopinioninvoicerequest = null;
+        this.handlesellerinforequest = null;
+
         this.seller_finished_cb = null;
         this.request_reference_uuid = null;
-
-        console.assert(typeof this.layer.getOpinionInvoice == 'function');
-        console.assert(typeof this.layer.getOpinionSellerInfo == 'function');
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -43,16 +43,17 @@ class SellerNexus extends ProtocolNexus {
         return LAYER_REQUESTS.has(msg['request_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         console.log("provider nexus got msg from below");
         if (! this.isLayerMessage(msg)) {
-            super.recvFromBelowCb(below_nexus, msg)
+            super.onMessage(below_nexus, msg)
             return;
         }
         this.request_reference_uuid = msg['request_uuid'];
         if (msg['request_name'] == "REQUEST_OPINION_SELLER") {
             var shared_seed = below_nexus.getSharedSeed();
-            var seller_info = this.layer.getOpinionSellerInfo();
+            console.assert(this.handlesellerinforequest != null);
+            var seller_info = this.handlesellerinforequest();
             console.log("seller info: " + JSON.stringify(seller_info));
             if (seller_info['ready']) {
                 this.notifySeller();
@@ -62,14 +63,15 @@ class SellerNexus extends ProtocolNexus {
                 this.layer.nexusWaitingForApp(shared_seed, this);
             }
         } else if (msg['request_name'] == "REQUEST_OPINION_INVOICE") {
-            this.layer.getOpinionInvoice(this, msg['item_id'],
-                                         msg['request_uuid']);
+            console.assert(this.handleopinioninvoicerequest != null);
+            this.handleopinioninvoicerequest(this, msg['item_id'],
+                                             msg['request_uuid']);
         }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         console.log("provider nexus got raw msg from below");
-        super.recvRawFromBelowCb(below_nexus, msg_bytes);
+        super.onBinMessage(below_nexus, msg_bytes);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -87,10 +89,12 @@ class SellerNexus extends ProtocolNexus {
 
     notifySeller() {
         var shared_seed = this.getSharedSeed();
-        var seller_info = this.layer.getOpinionSellerInfo(shared_seed);
+        console.assert(this.handlesellerinforequest != null);
+        var seller_info = this.handlesellerinforequest();
         console.assert(seller_info['ready']);
         var seller_uuid = seller_info['seller_uuid'];
         var items = seller_info['items'];
+        console.log("sending seller info: " + seller_info);
         this.send(new NotifyOpinionSeller(seller_uuid, items,
                                           this.request_reference_uuid));
     }

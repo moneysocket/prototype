@@ -3,7 +3,7 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 const Timestamp = require('../moneysocket/utl/timestamp.js').Timestamp;
-const ProtocolNexus = require("../moneysocket/protocol/nexus.js").ProtocolNexus;
+const Nexus = require("../moneysocket/nexus/nexus.js").Nexus;
 
 const RequestOpinionSeller = require(
     "./request_opinion_seller.js").RequestOpinionSeller;
@@ -24,12 +24,14 @@ const LAYER_NOTIFICATIONS = new Set(["NOTIFY_OPINION_SELLER",
                                      "NOTIFY_OPINION",
                                    ]);
 
-class BuyerNexus extends ProtocolNexus {
+class BuyerNexus extends Nexus {
     constructor(below_nexus, layer) {
         super(below_nexus, layer);
-        console.assert(typeof this.layer.gotSellerCb == 'function');
-        console.assert(typeof this.layer.gotOpinionInvoiceCb == 'function');
-        console.assert(typeof this.layer.gotOpinionCb == 'function');
+
+        this.onsellerinfo = null;
+        this.onopinioninvoice = null;
+        this.onopinion = null;
+
         this.consumerFinishedCb = null;
         this.request_reference_uuid = null;
         this.handshake_finished = false;
@@ -44,7 +46,7 @@ class BuyerNexus extends ProtocolNexus {
         return LAYER_NOTIFICATIONS.has(msg['notification_name']);
     }
 
-    recvFromBelowCb(below_nexus, msg) {
+    onMessage(below_nexus, msg) {
         //console.log("consumer nexus got message");
         if (! this.isLayerMessage(msg)) {
             super.recvFromBelowCb(below_nexus, msg)
@@ -56,26 +58,34 @@ class BuyerNexus extends ProtocolNexus {
                 this.sellerFinishedCb(this);
             }
             var seller_info = msg;
-            this.layer.gotSellerCb(this, seller_info);
+            if (this.onsellerinfo != null) {
+                this.onsellerinfo(this, seller_info);
+            }
         } else if (msg['notification_name'] == "NOTIFY_OPINION_INVOICE") {
             console.log("opinion invoice: " + JSON.stringify(msg));
-            this.layer.gotOpinionInvoiceCb(this, msg['bolt11'],
-                                           msg['request_reference_uuid']);
+            if (this.onopinioninvoice != null) {
+                this.onopinioninvoice(this, msg['bolt11'],
+                    msg['request_reference_uuid']);
+            }
         } else if (msg['notification_name'] == "NOTIFY_OPINION") {
-            this.layer.gotOpinionCb(this, msg['item_id'], msg['opinion']);
+            if (this.onopinion != null) {
+                this.onopinion(this, msg['item_id'], msg['opinion']);
+            }
         }
     }
 
-    recvRawFromBelowCb(below_nexus, msg_bytes) {
+    onBinMessage(below_nexus, msg_bytes) {
         console.log("buyer nexus got raw msg from below");
     }
 
     startHandshake(sellerFinishedCb) {
         this.sellerFinishedCb = sellerFinishedCb;
+        console.log("req seller");
         this.send(new RequestOpinionSeller());
     }
 
     requestOpinionInvoice(item_id) {
+        console.log("req opinion invoice");
         this.send(new RequestOpinionInvoice(item_id));
     }
 }

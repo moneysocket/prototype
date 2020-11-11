@@ -4,53 +4,74 @@
 
 
 
-const ProtocolLayer = require(
-    "../moneysocket/protocol/layer.js").ProtocolLayer;
+const Layer = require("../moneysocket/layer/layer.js").Layer;
 const BuyerNexus = require("./nexus.js").BuyerNexus;
 
 
-class BuyerLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer, "BUYER");
+class BuyerLayer extends Layer {
+    constructor() {
+        super();
 
-        console.assert(typeof stack.gotOpinionInvoiceCb == 'function');
-        console.assert(typeof stack.gotOpinionCb == 'function');
-        console.assert(typeof stack.gotSellerCb == 'function');
+        this.onsellerinfo = null;
+        this.onopinioninvoice = null;
+        this.onopinion = null;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    setupBuyerNexus(below_nexus) {
+        var n = new BuyerNexus(below_nexus, this);
+        n.onsellerinfo = (function(nexus, seller_info) {
+            this.onSellerInfo(nexus, seller_info);
+        }).bind(this);
+        n.onopinion = (function(nexus, item_id, opinion) {
+            this.onOpinion(nexus, item_id, opinion);
+        }).bind(this);
+        n.onopinioninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.onOpinionInvoice(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        return n;
+    }
+
+    announceNexus(below_nexus) {
         console.log("buyer layer got nexus, starting handshake");
-        var buyer_nexus = new BuyerNexus(below_nexus, this);
+        var buyer_nexus = this.setupBuyerNexus(below_nexus);
         this._trackNexus(buyer_nexus, below_nexus);
 
         buyer_nexus.startHandshake(this.buyerFinishedCb.bind(this));
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var buyer_nexus = this.nexuses[
             this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
+        super.revokeNexus(below_nexus);
     }
 
     buyerFinishedCb(buyer_nexus) {
         this._trackNexusAnnounced(buyer_nexus);
-        this.notifyAppOfStatus(buyer_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(buyer_nexus);
+        this.sendLayerEvent(buyer_nexus, "NEXUS_ANNOUNCED");
+        console.log("announcing from buyer layer");
+        if (this.onannounce != null) {
+            console.log("actually announcing from buyer layer");
+            this.onannounce(buyer_nexus);
+        }
     }
 
-
-    gotOpinionInvoiceCb(buyer_nexus, bolt11, request_reference_uuid) {
-        this.stack.gotOpinionInvoiceCb(buyer_nexus, bolt11,
-                                       request_reference_uuid);
+    onOpinionInvoice(buyer_nexus, bolt11, request_reference_uuid) {
+        if (this.onopinioninvoice != null) {
+            this.onopinioninvoice(buyer_nexus, bolt11, request_reference_uuid);
+        }
     }
 
-    gotOpinionCb(buyer_nexus, item_id, opinion) {
-        this.stack.gotOpinionCb(buyer_nexus, item_id, opinion);
+    onOpinion(buyer_nexus, item_id, opinion) {
+        if (this.onopinion != null) {
+            this.onopinion(buyer_nexus, item_id, opinion);
+        }
     }
 
-    gotSellerCb(buyer_nexus, seller_info) {
-        console.log("got seller info");
-        this.stack.gotSellerCb(buyer_nexus, seller_info);
+    onSellerInfo(buyer_nexus, seller_info) {
+        console.log("got seller info: " + seller_info);
+        if (this.onsellerinfo != null) {
+            this.onsellerinfo(buyer_nexus, seller_info);
+        }
     }
 
 }

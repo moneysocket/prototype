@@ -2,30 +2,32 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
+const Layer = require("./layer.js").Layer;
 const OutgoingRendezvousNexus = require(
-    "./outgoing_nexus.js").OutgoingRendezvousNexus;
+    "../nexus/outgoing_rendezvous.js").OutgoingRendezvousNexus;
 
 
-class OutgoingRendezvousLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer, "OUTGOING_RENDEZVOUS");
+class OutgoingRendezvousLayer extends Layer {
+    constructor() {
+        super();
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         var rendezvous_nexus = new OutgoingRendezvousNexus(below_nexus, this);
         this._trackNexus(rendezvous_nexus, below_nexus);
 
         var shared_seed = rendezvous_nexus.getSharedSeed();
         var rid = shared_seed.deriveRendezvousIdHex();
-        this.notifyAppOfStatus(rendezvous_nexus, "NEXUS_WAITING");
+        this.sendLayerEvent(rendezvous_nexus, "NEXUS_WAITING");
         rendezvous_nexus.startRendezvous(rid,
                                          this.rendezvousFinishedCb.bind(this));
     }
 
     rendezvousFinishedCb(rendezvous_nexus) {
         this._trackNexusAnnounced(rendezvous_nexus);
-        this.announceNexusAboveCb(rendezvous_nexus);
+        if (this.onannounce != null) {
+            this.onannounce(rendezvous_nexus);
+        }
     }
 
 }

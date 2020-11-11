@@ -3,42 +3,55 @@
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-
-const ProtocolLayer = require(
-    "../moneysocket/protocol/layer.js").ProtocolLayer;
+const Layer = require("../moneysocket/layer/layer.js").Layer;
 const SellerNexus = require("./nexus.js").SellerNexus;
 
 
-class SellerLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer, "SELLER");
-        console.assert(
-            typeof this.stack.getOpinionInvoiceCb == 'function');
-        console.assert(
-            typeof this.stack.getOpinionSellerInfoCb == 'function');
+class SellerLayer extends Layer {
+    constructor() {
+        super();
         this.waiting_for_app = {};
         this.nexus_by_shared_seed = {};
+
+        this.handleopinioninvoicerequest = null;
+        this.handlesellerinforequest = null;
     }
 
-    announceNexusFromBelowCb(below_nexus) {
+    setupSellerNexus(below_nexus) {
+        var n = new SellerNexus(below_nexus, this);
+        n.handleopinioninvoicerequest = (
+            function(nexus, item_id, request_uuid) {
+                this.handleOpinionInvoiceRequest(nexus, item_id, request_uuid);
+            }).bind(this);
+        n.handlesellerinforequest = (
+            function() {
+                return this.handleSellerInfoRequest();
+            }).bind(this);
+        return n;
+    }
+
+    announceNexus(below_nexus) {
         console.log("buyer layer got nexus, starting handshake");
-        var seller_nexus = new SellerNexus(below_nexus, this);
+        var seller_nexus = this.setupSellerNexus(below_nexus)
         this._trackNexus(seller_nexus, below_nexus);
 
-        this.notifyAppOfStatus(seller_nexus, "NEXUS_WAITING");
+        this.sendLayerEvent(seller_nexus, "NEXUS_WAITING");
         seller_nexus.waitForBuyer(this.sellerFinishedCb.bind(this));
     }
 
+
     sellerFinishedCb(seller_nexus) {
         this._trackNexusAnnounced(seller_nexus);
-        this.notifyAppOfStatus(seller_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(seller_nexus);
+        this.sendLayerEvent(seller_nexus, "NEXUS_ANNOUNCED");
+        if (this.onannounce != null) {
+            this.onannounce(seller_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var seller_nexus = this.nexuses[
             this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
+        super.revokeNexus(below_nexus);
 
         var shared_seed_str = seller_nexus.getSharedSeed().toString();
         delete this.waiting_for_app[shared_seed_str];
@@ -63,12 +76,15 @@ class SellerLayer extends ProtocolLayer {
         }
     }
 
-    getOpinionInvoice(seller_nexus, item_id, request_uuid) {
-        return this.stack.getOpinionInvoiceCb(item_id, request_uuid);
+    handleOpinionInvoiceRequest(seller_nexus, item_id, request_uuid) {
+        console.assert(this.handleopinioninvoicerequest != null);
+        return this.handleopinioninvoicerequest(seller_nexus, item_id,
+                                                request_uuid);
     }
 
-    getOpinionSellerInfo(seller_nexus) {
-        return this.stack.getOpinionSellerInfoCb();
+    handleSellerInfoRequest(seller_nexus) {
+        console.assert(this.handlesellerinforequest != null);
+        return this.handlesellerinforequest(seller_nexus);
     }
 }
 

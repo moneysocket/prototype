@@ -6,86 +6,155 @@ const WebsocketLocation = require(
     '../beacon/location/websocket.js').WebsocketLocation;
 
 const OutgoingWebsocketLayer = require(
-    "../protocol/websocket/outgoing_layer.js").OutgoingWebsocketLayer;
+    "../layer/outgoing_websocket.js").OutgoingWebsocketLayer;
 const OutgoingRendezvousLayer = require(
-    "../protocol/rendezvous/outgoing_layer.js").OutgoingRendezvousLayer;
-const ConsumerLayer = require("../protocol/consumer/layer.js").ConsumerLayer;
+    "../layer/outgoing_rendezvous.js").OutgoingRendezvousLayer;
+const ConsumerLayer = require("../layer/consumer.js").ConsumerLayer;
 const ConsumerTransactLayer = require(
-    "../protocol/transact/consumer_layer.js").ConsumerTransactLayer;
+    "../layer/consumer_transact.js").ConsumerTransactLayer;
 
 class ConsumerStack {
-    constructor(app) {
-        this.app = app;
+    constructor() {
+        this.onannounce = null;
+        this.onrevoke = null;
+        this.onproviderinfo = null;
+        this.onstackevent = null;
+        this.onping = null;
+        this.oninvoice = null;
+        this.onpreimage = null;
 
-        console.assert(typeof app.consumerOnlineCb == 'function');
-        console.assert(typeof app.consumerOfflineCb == 'function');
-        console.assert(typeof app.consumerReportProviderInfoCb == 'function');
-        console.assert(typeof app.consumerReportPingCb == 'function');
-        console.assert(typeof app.consumerPostStackEventCb == 'function');
+        this.websocket_layer = this.setupOutgoingWebsocketLayer(null);
+        this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.websocket_layer);
+        this.consumer_layer = this.setupConsumerLayer(this.rendezvous_layer);
+        this.transact_layer = this.setupConsumerTransactLayer(
+            this.consumer_layer);
 
-        console.assert(typeof app.consumerReportBolt11Cb == 'function');
-        console.assert(typeof app.consumerReportPreimageCb == 'function');
+        this.transact_layer.onannounce = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        this.transact_layer.onrevoke = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
 
-        this.transact_layer = new ConsumerTransactLayer(this, this);
-        this.consumer_layer = new ConsumerLayer(this, this.transact_layer);
-        this.rendezvous_layer = new OutgoingRendezvousLayer(
-            this, this.consumer_layer);
-        this.websocket_layer = new OutgoingWebsocketLayer(
-            this, this.rendezvous_layer);
+        this.nexus = null;
+    }
 
+
+    //////////////////////////////////////////////////////////////////////////
+    // setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupConsumerTransactLayer(below_layer) {
+        var l = new ConsumerTransactLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER_TRANSACT", nexus, status);
+        }).bind(this);
+        l.oninvoice = (function(nexus, bolt11, request_reference_uuid) {
+            this.onInvoice(nexus, bolt11, request_reference_uuid);
+        }).bind(this);
+        l.onpreimage = (function(nexus, preimage, request_reference_uuid) {
+            this.onPreimage(nexus, preimage, request_reference_uuid);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupConsumerLayer(below_layer) {
+        var l = new ConsumerLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("CONSUMER", nexus, status);
+        }).bind(this);
+        l.onproviderinfo = (function(nexus, msg) {
+            this.onProviderInfo(nexus, msg);
+        }).bind(this);
+        l.onping = (function(nexus, msecs) {
+            this.onPing(nexus, msecs);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingRendezvousLayer(below_layer) {
+        var l = new OutgoingRendezvousLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingWebsocketLayer() {
+        var l = new OutgoingWebsocketLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
+        }).bind(this);
+        return l;
     }
 
     //////////////////////////////////////////////////////////////////////////
     // transact layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyInvoiceCb(transact_nexus, bolt11, request_reference_uuid) {
-        this.app.consumerReportBolt11Cb(bolt11, request_reference_uuid);
+    onInvoice(transact_nexus, bolt11, request_reference_uuid) {
+        if (this.oninvoice != null) {
+            this.oninvoice(bolt11, request_reference_uuid);
+        }
     }
 
-    notifyPreimageCb(transact_nexus, preimage, request_reference_uuid) {
-        this.app.consumerReportPreimageCb(preimage, request_reference_uuid);
+    onPreimage(transact_nexus, preimage, request_reference_uuid) {
+        if (this.onpreimage != null) {
+            this.onpreimage(preimage, request_reference_uuid);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     // consumer layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    notifyProviderCb(consumer_nexus, msg) {
+    onProviderInfo(consumer_nexus, msg) {
         var provider_info = {'payer':         msg['payer'],
                              'payee':         msg['payee'],
                              'wad':           msg['wad'],
                              'account_uuid':  msg['account_uuid']};
-        this.app.consumerReportProviderInfoCb(provider_info);
+        if (this.onproviderinfo != null) {
+            this.onproviderinfo(provider_info);
+        }
     }
 
-    notifyPingCb(consumer_nexus, msecs) {
-        this.app.consumerReportPingCb(msecs);
+    onPing(consumer_nexus, msecs) {
+        if (this.onping != null) {
+            this.onping(msecs);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////
     // layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
-        //this.nexus.startPinging();
 
-        console.log("consumer stack got nexus");
-        this.app.consumerOnlineCb();
+        if (this.onannounce != null) {
+            this.onannounce(below_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         console.log("consumer stack got nexus revoked");
-        //this.nexus.stopPinging();
         this.nexus = null;
         this.shared_seed = null;
-        this.app.consumerOfflineCb();
+
+        if (this.onrevoke != null) {
+            this.onrevoke(below_nexus);
+        }
     }
 
-    postLayerStackEventCb(layer_name, nexus, status) {
-        this.app.consumerPostStackEventCb(layer_name, status);
+    onLayerEvent(layer_name, nexus, status) {
+        if (this.onstackevent != null) {
+            this.onstackevent(layer_name, nexus, status);
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -7,10 +7,6 @@ const Uuid = require('./moneysocket/utl/uuid.js').Uuid;
 const Bolt11 = require('./moneysocket/utl/bolt11.js').Bolt11;
 
 const Timestamp = require('./moneysocket/utl/timestamp.js').Timestamp;
-const WebsocketInterconnect = require(
-    './moneysocket/socket/websocket.js').WebsocketInterconnect;
-const WebsocketLocation = require(
-    './moneysocket/beacon/location/websocket.js').WebsocketLocation;
 
 const ConnectUi = require('./ui/connect.js').ConnectUi;
 const SellerConnectUi = require('./seller/connect_ui.js').SellerConnectUi;
@@ -26,13 +22,13 @@ class SellerApp {
         this.my_div = document.createElement("div");
         this.my_div.setAttribute("class", "bordered");
 
-
         this.seller_app_ui = new SellerUi(this.my_div, this);
 
-        this.seller_stack = new SellerStack(this);
+        this.seller_stack = this.setupSellerStack();
+        this.consumer_stack = this.setupConsumerStack();
+
         this.seller_ui = new SellerConnectUi(this.my_div, "Seller App Provider",
                                              this.seller_stack);
-        this.consumer_stack = new ConsumerStack(this);
         this.consumer_ui = new ConnectUi(this.my_div, "Seller Wallet Consumer",
                                          this.consumer_stack);
         this.account_uuid = Uuid.uuidv4();
@@ -47,6 +43,56 @@ class SellerApp {
         this.seller_wad = null;
     }
 
+    setupSellerStack() {
+        var s = new SellerStack();
+        s.onannounce = (function(nexus) {
+            this.sellerOnAnnounce(nexus);
+        }).bind(this);
+        s.onrevoke = (function(nexus) {
+            this.sellerOnRevoke(nexus);
+        }).bind(this);
+        s.onstackevent = (function(layer_name, nexus, status) {
+            this.sellerOnStackEvent(layer_name, nexus, status);
+        }).bind(this);
+        s.handleopinioninvoicerequest = (
+            function(item_id, request_reference_uuid) {
+                return this.handleOpinionInvoiceRequest(item_id,
+                                                        request_reference_uuid);
+            }).bind(this);
+        s.handlesellerinforequest = (function(item_id, request_reference_uuid) {
+            return this.handleSellerInfoRequest();
+        }).bind(this);
+        s.handleproviderinforequest = (function() {
+            return this.handleProviderInfoRequest();
+        }).bind(this);
+        return s;
+    }
+
+    setupConsumerStack() {
+        var s = new ConsumerStack();
+        s.onannounce = (function(nexus) {
+            this.consumerOnAnnounce(nexus);
+        }).bind(this);
+        s.onrevoke = (function(nexus) {
+            this.consumerOnRevoke(nexus);
+        }).bind(this);
+        s.onproviderinfo = (function(provider_info) {
+            this.consumerOnProviderInfo(provider_info);
+        }).bind(this);
+        s.onstackevent = (function(layer_name, nexus, status) {
+            this.consumerOnStackEvent(layer_name, nexus, status);
+        }).bind(this);
+        s.onping = (function(msecs) {
+            this.consumerOnPing(msecs);
+        }).bind(this);
+        s.oninvoice = (function(bolt11, request_reference_uuid) {
+            this.consumerOnInvoice(bolt11, request_reference_uuid);
+        }).bind(this);
+        s.onpreimage = (function(preimage, request_reference_uuid) {
+            this.consumerOnPreimage(preimage, request_reference_uuid);
+        }).bind(this);
+        return s;
+    }
 
     drawSellerUi() {
         DomUtl.drawTitle(this.my_div, "Opinion Seller App", "h2");
@@ -145,18 +191,18 @@ class SellerApp {
     // Consumer Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    consumerOnlineCb() {
+    consumerOnAnnounce(nexus) {
         this.seller_app_ui.consumerOnline();
     }
 
-    consumerOfflineCb() {
+    consumerOnRevoke(nexus) {
         this.seller_wad = null;
         this.provider_info = {'ready': false};
         this.seller_app_ui.consumerOffline();
         this.seller_stack.doDisconnect();
     }
 
-    consumerReportProviderInfoCb(provider_info) {
+    consumerOnProviderInfo(provider_info) {
         var was_ready = this.provider_info['ready'];
         this.seller_wad = provider_info['wad'];
         this.provider_info = {'ready':        true,
@@ -170,21 +216,21 @@ class SellerApp {
         }
     }
 
-    consumerReportPingCb(msecs) {
+    consumerOnPing(msecs) {
         this.seller_app_ui.pingUpdate(msecs);
     }
 
-    consumerPostStackEventCb(later_name, status) {
-        this.consumer_ui.postStackEvent(later_name, status);
+    consumerOnStackEvent(layer_name, nexus, status) {
+        this.consumer_ui.postStackEvent(layer_name, status);
     }
 
-    consumerReportBolt11Cb(bolt11, request_reference_uuid) {
+    consumerOnInvoice(bolt11, request_reference_uuid) {
         //console.log("got invoice from consumer: " + request_reference_uuid);
         //console.log("payment hash: " + Bolt11.getPaymentHash(bolt11));
         if (! (request_reference_uuid in this.requested_items)) {
             console.error("got bolt11 not requested?");
         } else {
-            this.seller_stack.fulfilRequestOpinionInvoiceCb(
+            this.seller_stack.fulfilOpinionInvoiceRequest(
                 bolt11, request_reference_uuid);
             var payment_hash = Bolt11.getPaymentHash(bolt11);
             var item_id = this.requested_items[request_reference_uuid];
@@ -195,7 +241,7 @@ class SellerApp {
         }
     }
 
-    consumerReportPreimageCb(preimage, request_reference_uuid) {
+    consumerOnPreimage(preimage, request_reference_uuid) {
         console.log("got preimage from consumer: " + preimage);
         var payment_hash = Bolt11.preimageToPaymentHash(preimage);
 
@@ -207,6 +253,7 @@ class SellerApp {
             var item_id = record['item_id'];
             var request_reference_uuid = record['request_reference_uuid'];
             var opinion = this.getItem(item_id);
+            console.log("fulfilling opinion: " + opinion);
             this.seller_stack.fulfilOpinion(item_id, opinion,
                                             request_reference_uuid);
         }
@@ -216,7 +263,7 @@ class SellerApp {
     // Seller Stack Callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    sellerRequestingOpinionInvoiceCb(item_id, request_uuid) {
+    handleOpinionInvoiceRequest(item_id, request_uuid) {
         if (item_id == 'hello') {
             this.consumer_stack.requestInvoice(this.getHelloMsatPrice(),
                                                request_uuid, "Hello World");
@@ -235,7 +282,7 @@ class SellerApp {
         this.requested_items[request_uuid] = item_id;
     }
 
-    sellerRequestingOpinionSellerInfoCb() {
+    handleSellerInfoRequest() {
         // track and provide seller stuff
         if (this.store_open) {
             return {'ready': true,
@@ -259,21 +306,22 @@ class SellerApp {
         }
     }
 
-    sellerOnlineCb() {
+    sellerOnAnnounce(nexus) {
         console.log("---");
         this.seller_app_ui.providerOnline();
     }
 
-    sellerOfflineCb() {
+    sellerOnRevoke(nexus) {
         this.seller_app_ui.providerOffline();
     }
 
-    sellerPostStackEventCb(layer_name, status) {
+    sellerOnStackEvent(layer_name, nexus, status) {
         this.seller_ui.postStackEvent(layer_name, status);
     }
+
     ///////////////////////////////////////////////////////////////////////////
 
-    getProviderInfo(shared_seed) {
+    handleProviderInfoRequest(shared_seed) {
         return this.provider_info;
     }
 }

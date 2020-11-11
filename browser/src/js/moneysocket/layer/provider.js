@@ -2,40 +2,51 @@
 // Distributed under the MIT software license, see the accompanying
 // file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-const ProtocolLayer =  require("../layer.js").ProtocolLayer;
-const ProviderNexus = require("./nexus.js").ProviderNexus;
+const Layer = require("./layer.js").Layer;
+const ProviderNexus = require("../nexus/provider.js").ProviderNexus;
 
+class ProviderLayer extends Layer {
+    constructor() {
+        super();
+        this.handleproviderinforequest = null;
 
-
-class ProviderLayer extends ProtocolLayer {
-    constructor(stack, above_layer) {
-        super(stack, above_layer, "PROVIDER");
-        console.assert(typeof stack.getProviderInfo == 'function');
         this.waiting_for_app = {};
         this.nexus_by_shared_seed = {};
     }
 
-    announceNexusFromBelowCb(below_nexus) {
-        var provider_nexus = new ProviderNexus(below_nexus, this);
+    setupProviderNexus(below_nexus) {
+        var n = new ProviderNexus(below_nexus, this);
+        n.handleproviderinforequest = (function() {
+            return this.handleProviderInfoRequest();
+        }).bind(this);
+        return n;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    announceNexus(below_nexus) {
+        var provider_nexus = this.setupProviderNexus(below_nexus);
         this._trackNexus(provider_nexus, below_nexus);
 
         var shared_seed_str = provider_nexus.getSharedSeed().toString();
         this.nexus_by_shared_seed[shared_seed_str] = provider_nexus;
 
-        this.notifyAppOfStatus(provider_nexus, "NEXUS_WAITING");
+        this.sendLayerEvent(provider_nexus, "NEXUS_WAITING");
         provider_nexus.waitForConsumer(this.providerFinishedCb.bind(this));
     }
 
     providerFinishedCb(provider_nexus) {
         this._trackNexusAnnounced(provider_nexus);
-        this.notifyAppOfStatus(provider_nexus, "NEXUS_ANNOUNCED");
-        this.announceNexusAboveCb(provider_nexus);
+        this.sendLayerEvent(provider_nexus, "NEXUS_ANNOUNCED");
+        if (this.onannounce != null) {
+            this.onannounce(provider_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         var provider_nexus = this.nexuses[
             this.nexus_by_below[below_nexus.uuid]];
-        super.revokeNexusFromBelowCb(below_nexus);
+        super.revokeNexus(below_nexus);
         var shared_seed_str = provider_nexus.getSharedSeed().toString();
         delete this.waiting_for_app[shared_seed_str];
         delete this.nexus_by_shared_seed[shared_seed_str];
@@ -54,6 +65,11 @@ class ProviderLayer extends ProtocolLayer {
             delete this.waiting_for_app[shared_seed_str];
             provider_nexus.providerNowReady();
         }
+    }
+
+    handleProviderInfoRequest(shared_seed) {
+        console.assert(this.handleproviderinforequest != null);
+        return this.handleproviderinforequest(shared_seed);
     }
 
     sendProviderInfoUpdate(shared_seed) {

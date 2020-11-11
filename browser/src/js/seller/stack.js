@@ -5,15 +5,15 @@
 const WebsocketLocation = require(
     '../moneysocket/beacon/location/websocket.js').WebsocketLocation;
 const OutgoingWebsocketLayer = require(
-    "../moneysocket/protocol/websocket/outgoing_layer.js")
+    "../moneysocket/layer/outgoing_websocket.js")
         .OutgoingWebsocketLayer;
 const ProviderLayer = require(
-    "../moneysocket/protocol/provider/layer.js").ProviderLayer;
+    "../moneysocket/layer/provider.js").ProviderLayer;
 const OutgoingRendezvousLayer = require(
-    "../moneysocket/protocol/rendezvous/outgoing_layer.js")
+    "../moneysocket/layer/outgoing_rendezvous.js")
         .OutgoingRendezvousLayer;
 const ProviderTransactLayer = require(
-    "../moneysocket/protocol/transact/provider_layer.js").ProviderTransactLayer;
+    "../moneysocket/layer/provider_transact.js").ProviderTransactLayer;
 const SellerLayer = require("../seller/layer.js").SellerLayer;
 
 
@@ -22,36 +22,107 @@ class SellerStack {
         this.app = app;
         this.ui = ui;
 
-        console.assert(typeof app.sellerOnlineCb == 'function');
-        console.assert(typeof app.sellerOfflineCb == 'function');
-        console.assert(typeof app.sellerPostStackEventCb == 'function');
+        this.onannounce = null;
+        this.onrevoke = null;
+        this.onstackevent = null;
+        this.handleinvoicerequest = null;
+        this.handlepayrequest = null;
+        this.handleproviderinforequest = null;
+        this.handleopinioninvoicerequest = null;
+        this.handlesellerinforequest = null;
 
-        console.assert(
-            typeof app.sellerRequestingOpinionInvoiceCb == 'function');
-        console.assert(
-            typeof app.sellerRequestingOpinionSellerInfoCb == 'function');
-
-        this.seller_layer = new SellerLayer(this, this);
-        this.transact_layer = new ProviderTransactLayer(this,
-                                                        this.seller_layer);
-        this.provider_layer = new ProviderLayer(this, this.transact_layer);
-        this.rendezvous_layer = new OutgoingRendezvousLayer(this,
+        this.websocket_layer = this.setupOutgoingWebsocketLayer();
+        this.rendezvous_layer = this.setupOutgoingRendezvousLayer(
+            this.websocket_layer);
+        this.provider_layer = this.setupProviderLayer(this.rendezvous_layer);
+        this.transact_layer = this.setupProviderTransactLayer(
             this.provider_layer);
-        this.websocket_layer = new OutgoingWebsocketLayer(this,
-            this.rendezvous_layer);
+        this.seller_layer = this.setupSellerLayer(this.transact_layer);
+
+        this.seller_layer.onannounce = (function(nexus) {
+            this.announceNexus(nexus);
+        }).bind(this);
+        this.seller_layer.onrevoke = (function(nexus) {
+            this.revokeNexus(nexus);
+        }).bind(this);
 
         this.nexus = null;
         this.shared_seed = null;
     }
 
-    getProviderInfo(shared_seed) {
-        return this.app.getProviderInfo();
+    //////////////////////////////////////////////////////////////////////////
+    // setup
+    //////////////////////////////////////////////////////////////////////////
+
+    setupSellerLayer(below_layer) {
+        var l = new SellerLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("SELLER", nexus, status);
+        }).bind(this);
+        l.handleopinioninvoicerequest = (function(nexus, msats, request_uuid) {
+           this.handleOpinionInvoiceRequest(msats, request_uuid);
+        }).bind(this);
+        l.handlesellerinforequest = (function() {
+           return this.handleSellerInfoRequest();
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupProviderTransactLayer(below_layer) {
+        var l = new ProviderTransactLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("PROVIDER_TRANSACT", nexus, status);
+        }).bind(this);
+        l.handleinvoicerequest = (function(nexus, msats, request_uuid) {
+            this.handleInvoiceRequest(msats, request_uuid);
+        }).bind(this);
+        l.handlepayrequest = (function(nexus, msats, request_uuid) {
+            this.handlePayRequest(msats, request_uuid);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupProviderLayer(below_layer) {
+        var l = new ProviderLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("PROVIDER", nexus, status);
+        }).bind(this);
+        l.handleproviderinforequest = (function(shared_seed) {
+            return this.handleProviderInfoRequest(shared_seed);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingRendezvousLayer(below_layer) {
+        var l = new OutgoingRendezvousLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_RENDEZVOUS", nexus, status);
+        }).bind(this);
+        l.registerAboveLayer(below_layer);
+        return l;
+    }
+
+    setupOutgoingWebsocketLayer() {
+        var l = new OutgoingWebsocketLayer();
+        l.onlayerevent = (function(nexus, status) {
+            this.onLayerEvent("OUTGOING_WEBSOCKET", nexus, status);
+        }).bind(this);
+        return l;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    handleProviderInfoRequest(shared_seed) {
+        console.assert(this.handleproviderinforequest != null);
+        return this.handleproviderinforequest();
     }
 
     providerNowReadyFromApp() {
         this.provider_layer.providerNowReadyFromApp();
     }
-
 
     sendProviderInfoUpdate() {
         if (this.nexus == null) {
@@ -73,38 +144,45 @@ class SellerStack {
     // layer callbacks:
     //////////////////////////////////////////////////////////////////////////
 
-    announceNexusFromBelowCb(below_nexus) {
+    announceNexus(below_nexus) {
         console.log("provider stack got nexus");
         this.nexus = below_nexus;
         this.shared_seed = below_nexus.getSharedSeed();
-        this.app.sellerOnlineCb();
+
+        if (this.onannounce != null) {
+            this.onannounce(below_nexus);
+        }
     }
 
-    revokeNexusFromBelowCb(below_nexus) {
+    revokeNexus(below_nexus) {
         console.log("provider stack got nexus revoked");
         this.nexus = null;
         this.shared_seed = null;
-        this.app.sellerOfflineCb();
+        if (this.onrevoke != null) {
+            this.orevoke(below_nexus);
+        }
     }
 
-    postLayerStackEventCb(layer_name, nexus, status) {
-        this.app.sellerPostStackEventCb(layer_name, status);
+    onLayerEvent(layer_name, nexus, status) {
+        if (this.onstackevent != null) {
+            this.onstackevent(layer_name, nexus, status);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
     // seller layer callbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    getOpinionInvoiceCb(item_id, request_uuid) {
-        return this.app.sellerRequestingOpinionInvoiceCb(item_id, request_uuid);
+    handleOpinionInvoiceRequest(item_id, request_uuid) {
+        this.handleopinioninvoicerequest(item_id, request_uuid);
     }
 
-    fulfilRequestOpinionInvoiceCb(bolt11, request_reference_uuid) {
+    fulfilOpinionInvoiceRequest(bolt11, request_reference_uuid) {
         this.nexus.notifyOpinionInvoice(bolt11, request_reference_uuid);
     }
 
-    getOpinionSellerInfoCb() {
-        return this.app.sellerRequestingOpinionSellerInfoCb();
+    handleSellerInfoRequest() {
+        return this.handlesellerinforequest();
     }
 
     fulfilOpinion(item_id, opinion, request_reference_uuid) {
@@ -115,12 +193,24 @@ class SellerStack {
     // transact layer allbacks
     ///////////////////////////////////////////////////////////////////////////
 
-    gotRequestInvoiceCb(msats, request_uuid) {
-        // TODO - error?
+    handleInvoiceRequest(msats, request_uuid) {
+        if (this.handleinvoicerequest != null) {
+            this.handleinvoicerequest(mstats, request_uuid);
+        }
     }
 
-    gotRequestPayCb(bolt11, request_uuid) {
-        // TODO - error?
+    fulfilRequestInvoice(bolt11, request_reference_uuid) {
+        this.nexus.notifyInvoice(bolt11, request_reference_uuid);
+    }
+
+    handlePayRequest(bolt11, request_uuid) {
+        if (this.handlepayrequest != null) {
+            this.handlepayrequest(bolt11, request_uuid);
+        }
+    }
+
+    fulfilRequestPay(preimage, request_reference_uuid) {
+        this.nexus.notifyPreimage(preimage, request_reference_uuid);
     }
 
     //////////////////////////////////////////////////////////////////////////
