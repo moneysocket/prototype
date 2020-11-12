@@ -3,12 +3,11 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-from moneysocket.protocol.transact.provider_layer import ProviderTransactLayer
-from moneysocket.protocol.provider.layer import ProviderLayer
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.local.outgoing_layer import OutgoingLocalLayer
+from moneysocket.layer.transact.provider import ProviderTransactLayer
+from moneysocket.layer.provider import ProviderLayer
+from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
+from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
+from moneysocket.layer.local.outgoing import OutgoingLocalLayer
 
 from moneysocket.stack.incoming import IncomingStack
 

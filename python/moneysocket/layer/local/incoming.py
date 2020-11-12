@@ -5,7 +5,7 @@
 import logging
 
 from moneysocket.layer.layer import Layer
-from moneysocket.protocol.local.nexus import LocalNexus
+from moneysocket.nexus.local.local import LocalNexus
 
 
 class IncomingLocalLayer(Layer):

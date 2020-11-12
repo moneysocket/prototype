@@ -3,11 +3,10 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.beacon.location.websocket import WebsocketLocation
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.consumer.layer import ConsumerLayer
-from moneysocket.protocol.transact.consumer_layer import ConsumerTransactLayer
+from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
+from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
+from moneysocket.layer.consumer import ConsumerLayer
+from moneysocket.layer.transact.consumer import ConsumerTransactLayer
 
 
 class ConsumerStack(object):

@@ -6,10 +6,10 @@ import logging
 
 from moneysocket.layer.layer import Layer
 
-from moneysocket.protocol.local.incoming_nexus import IncomingLocalNexus
-from moneysocket.protocol.local.outgoing_nexus import OutgoingLocalNexus
-from moneysocket.protocol.local.joined_nexus import JoinedLocalNexus
-from moneysocket.protocol.local.nexus import LocalNexus
+from moneysocket.nexus.local.incoming import IncomingLocalNexus
+from moneysocket.nexus.local.outgoing import OutgoingLocalNexus
+from moneysocket.nexus.local.joined import JoinedLocalNexus
+from moneysocket.nexus.local.local import LocalNexus
 
 
 class OutgoingLocalLayer(Layer):

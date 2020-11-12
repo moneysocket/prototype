@@ -2,7 +2,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.terminus.nexus import TerminusNexus
+from moneysocket.nexus.terminus import TerminusNexus
 from moneysocket.layer.layer import Layer
 
 

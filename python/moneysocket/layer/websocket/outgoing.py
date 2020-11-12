@@ -12,8 +12,8 @@ from twisted.internet import reactor, ssl
 from autobahn.twisted.websocket import connectWS
 from autobahn.twisted.websocket import WebSocketClientFactory
 
-from moneysocket.protocol.websocket.nexus import WebsocketNexus
-from moneysocket.protocol.websocket.outgoing_socket import OutgoingSocket
+from moneysocket.nexus.websocket.websocket import WebsocketNexus
+from moneysocket.nexus.websocket.outgoing import OutgoingSocket
 from moneysocket.layer.layer import Layer
 
 

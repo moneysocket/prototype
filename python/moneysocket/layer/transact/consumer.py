@@ -2,7 +2,7 @@
 # Distributed under the MIT software license, see the accompanying#  file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.layer.layer import Layer
-from moneysocket.protocol.transact.consumer_nexus import ConsumerTransactNexus
+from moneysocket.nexus.transact.consumer import ConsumerTransactNexus
 
 
 class ConsumerTransactLayer(Layer):

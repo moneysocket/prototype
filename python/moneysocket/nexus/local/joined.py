@@ -6,8 +6,8 @@ import sys
 import uuid
 import logging
 
-from moneysocket.protocol.local.incoming_nexus import IncomingLocalNexus
-from moneysocket.protocol.local.outgoing_nexus import OutgoingLocalNexus
+from moneysocket.nexus.local.incoming import IncomingLocalNexus
+from moneysocket.nexus.local.outgoing import OutgoingLocalNexus
 
 class JoinedLocalNexus(object):
     def __init__(self):

@@ -2,8 +2,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.rendezvous.outgoing_nexus import (
-    OutgoingRendezvousNexus)
+from moneysocket.nexus.rendezvous.outgoing import OutgoingRendezvousNexus
 from moneysocket.layer.layer import Layer
 
 

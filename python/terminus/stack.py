@@ -2,12 +2,11 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.terminus.layer import TerminusLayer
-from moneysocket.protocol.provider.layer import ProviderLayer
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.local.outgoing_layer import OutgoingLocalLayer
+from moneysocket.layer.terminus import TerminusLayer
+from moneysocket.layer.provider import ProviderLayer
+from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
+from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
+from moneysocket.layer.local.outgoing import OutgoingLocalLayer
 
 from moneysocket.stack.incoming import IncomingStack
 

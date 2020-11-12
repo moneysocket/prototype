@@ -7,11 +7,10 @@ import logging
 
 from OpenSSL import SSL
 
-from moneysocket.protocol.relay.layer import RelayLayer
-from moneysocket.protocol.websocket.incoming_layer import IncomingWebsocketLayer
-from moneysocket.protocol.rendezvous.incoming_layer import (
-    IncomingRendezvousLayer)
-from moneysocket.protocol.local.incoming_layer import IncomingLocalLayer
+from moneysocket.layer.relay import RelayLayer
+from moneysocket.layer.websocket.incoming import IncomingWebsocketLayer
+from moneysocket.layer.rendezvous.incoming import IncomingRendezvousLayer
+from moneysocket.layer.local.incoming import IncomingLocalLayer
 from moneysocket.beacon.location.websocket import WebsocketLocation
 
 

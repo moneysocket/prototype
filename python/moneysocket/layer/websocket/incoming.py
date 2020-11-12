@@ -13,8 +13,8 @@ from autobahn.twisted.websocket import listenWS
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
 
-from moneysocket.protocol.websocket.nexus import WebsocketNexus
-from moneysocket.protocol.websocket.incoming_socket import IncomingSocket
+from moneysocket.nexus.websocket.websocket import WebsocketNexus
+from moneysocket.nexus.websocket.incoming import IncomingSocket
 from moneysocket.layer.layer import Layer
 
 

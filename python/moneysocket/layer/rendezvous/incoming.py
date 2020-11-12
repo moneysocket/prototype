@@ -3,10 +3,9 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.layer.layer import Layer
-from moneysocket.protocol.rendezvous.directory import RendezvousDirectory
+from moneysocket.layer.rendezvous.directory import RendezvousDirectory
+from moneysocket.nexus.rendezvous.incoming import IncomingRendezvousNexus
 
-from moneysocket.protocol.rendezvous.incoming_nexus import (
-    IncomingRendezvousNexus)
 
 class IncomingRendezvousLayer(Layer):
     def __init__(self, stack, above_layer):

@@ -3,7 +3,7 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.layer.layer import Layer
-from moneysocket.protocol.transact.provider_nexus import ProviderTransactNexus
+from moneysocket.nexus.transact.provider import ProviderTransactNexus
 
 
 class ProviderTransactLayer(Layer):
