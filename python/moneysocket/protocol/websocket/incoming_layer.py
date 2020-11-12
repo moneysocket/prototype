@@ -15,12 +15,12 @@ from autobahn.twisted.websocket import WebSocketServerProtocol
 
 from moneysocket.protocol.websocket.nexus import WebsocketNexus
 from moneysocket.protocol.websocket.incoming_socket import IncomingSocket
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
 
 ###############################################################################
 
-class IncomingWebsocketLayer(ProtocolLayer):
+class IncomingWebsocketLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "INCOMING_WEBSOCKET")
         self.listener = None

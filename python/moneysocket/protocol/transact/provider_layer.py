@@ -2,11 +2,11 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 from moneysocket.protocol.transact.provider_nexus import ProviderTransactNexus
 
 
-class ProviderTransactLayer(ProtocolLayer):
+class ProviderTransactLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "PROVIDER_TRANSACT")
         assert "got_request_pay_cb" in dir(stack)

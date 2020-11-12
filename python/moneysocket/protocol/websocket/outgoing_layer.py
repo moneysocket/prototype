@@ -14,7 +14,7 @@ from autobahn.twisted.websocket import WebSocketClientFactory
 
 from moneysocket.protocol.websocket.nexus import WebsocketNexus
 from moneysocket.protocol.websocket.outgoing_socket import OutgoingSocket
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
 
 
@@ -50,7 +50,7 @@ class WebsocketConnectionAttempt(MoneysocketConnectionAttempt):
 
 ###############################################################################
 
-class OutgoingWebsocketLayer(ProtocolLayer):
+class OutgoingWebsocketLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "OUTGOING_WEBSOCKET")
         self.nexus_by_shared_seed = {}

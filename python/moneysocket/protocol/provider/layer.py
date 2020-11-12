@@ -3,10 +3,10 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.protocol.provider.nexus import ProviderNexus
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
 
-class ProviderLayer(ProtocolLayer):
+class ProviderLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "PROVIDER")
         assert "get_provider_info" in dir(stack)

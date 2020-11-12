@@ -5,7 +5,7 @@
 import sys
 import logging
 
-class ProtocolLayer(object):
+class Layer(object):
     def __init__(self, stack, above_layer, layer_name):
         self.stack = stack
         self.layer_name = layer_name

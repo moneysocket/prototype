@@ -3,9 +3,9 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 import logging
 
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
-class RelayLayer(ProtocolLayer):
+class RelayLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "RELAY")
         self.rendezvous_layer = None

@@ -3,10 +3,10 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.protocol.terminus.nexus import TerminusNexus
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
 
-class TerminusLayer(ProtocolLayer):
+class TerminusLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "TERMINUS")
         assert "terminus_request_invoice" in dir(stack)

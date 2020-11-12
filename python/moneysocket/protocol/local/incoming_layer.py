@@ -4,11 +4,11 @@
 
 import logging
 
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 from moneysocket.protocol.local.nexus import LocalNexus
 
 
-class IncomingLocalLayer(ProtocolLayer):
+class IncomingLocalLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "INCOMING_LOCAL")
 

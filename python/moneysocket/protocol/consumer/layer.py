@@ -3,10 +3,10 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.protocol.consumer.nexus import ConsumerNexus
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 
 
-class ConsumerLayer(ProtocolLayer):
+class ConsumerLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "CONSUMER")
         assert "notify_ping_cb" in dir(stack)

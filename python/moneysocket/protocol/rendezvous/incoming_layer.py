@@ -2,13 +2,13 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.layer import ProtocolLayer
+from moneysocket.layer.layer import Layer
 from moneysocket.protocol.rendezvous.directory import RendezvousDirectory
 
 from moneysocket.protocol.rendezvous.incoming_nexus import (
     IncomingRendezvousNexus)
 
-class IncomingRendezvousLayer(ProtocolLayer):
+class IncomingRendezvousLayer(Layer):
     def __init__(self, stack, above_layer):
         super().__init__(stack, above_layer, "INCOMING_RENDEZVOUS")
         self.directory = RendezvousDirectory()
