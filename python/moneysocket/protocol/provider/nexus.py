@@ -5,13 +5,13 @@
 import uuid
 import logging
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 from moneysocket.message.notification.provider import NotifyProvider
 from moneysocket.message.notification.pong import NotifyPong
 from moneysocket.message.notification.provider_not_ready import (
     NotifyProviderNotReady)
 
-class ProviderNexus(ProtocolNexus):
+class ProviderNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
         self.provider_finished_cb = None

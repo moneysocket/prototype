@@ -8,13 +8,13 @@ import logging
 
 from twisted.internet.task import LoopingCall
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
 from moneysocket.message.request.provider import RequestProvider
 from moneysocket.message.request.ping import RequestPing
 
 
-class ConsumerNexus(ProtocolNexus):
+class ConsumerNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
         assert "notify_ping_cb" in dir(layer)

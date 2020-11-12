@@ -5,14 +5,14 @@
 import uuid
 import logging
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
 from moneysocket.message.notification.rendezvous import NotifyRendezvous
 from moneysocket.message.notification.rendezvous_not_ready import (
     NotifyRendezvousNotReady)
 from moneysocket.message.notification.rendezvous_end import NotifyRendezvousEnd
 
-class IncomingRendezvousNexus(ProtocolNexus):
+class IncomingRendezvousNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
         self.rendezvous_finished_cb = None

@@ -4,7 +4,7 @@
 
 import logging
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 from moneysocket.message.notification.invoice import NotifyInvoice
 from moneysocket.message.notification.preimage import NotifyPreimage
 from moneysocket.message.notification.provider import NotifyProvider
@@ -12,7 +12,7 @@ from moneysocket.message.notification.provider import NotifyProvider
 
 LAYER_REQUESTS = {"REQUEST_PAY", "REQUEST_INVOICE"}
 
-class ProviderTransactNexus(ProtocolNexus):
+class ProviderTransactNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
         assert "request_invoice_cb" in dir(self.layer)

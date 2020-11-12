@@ -5,11 +5,11 @@
 import logging
 import sys
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
 from moneysocket.message.codec import MessageCodec
 
-class OutgoingLocalNexus(ProtocolNexus):
+class OutgoingLocalNexus(Nexus):
     def __init__(self, below_nexus, layer, shared_seed):
         super().__init__(below_nexus, layer)
         assert below_nexus.__class__.__name__ == "JoinedLocalNexus"

@@ -5,7 +5,7 @@
 import uuid
 import logging
 
-class ProtocolNexus(object):
+class Nexus(object):
     def __init__(self, below_nexus, layer):
         self.uuid = uuid.uuid4()
         self.below_nexus = below_nexus

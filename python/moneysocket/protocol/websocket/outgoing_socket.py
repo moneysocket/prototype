@@ -10,7 +10,7 @@ from moneysocket.message.codec import MessageCodec
 
 
 class OutgoingSocket(WebSocketClientProtocol):
-    """ Makes the autobahn websocket client look like a ProtocolNexus to
+    """ Makes the autobahn websocket client look like a Nexus to
         be passed upwards.
     """
     def __init__(self):

@@ -5,10 +5,10 @@
 import uuid
 import logging
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
 
-class WebsocketNexus(ProtocolNexus):
+class WebsocketNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
 

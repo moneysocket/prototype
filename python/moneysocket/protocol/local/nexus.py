@@ -5,9 +5,9 @@
 import logging
 import sys
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
-class LocalNexus(ProtocolNexus):
+class LocalNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
 

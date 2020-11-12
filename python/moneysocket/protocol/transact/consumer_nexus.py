@@ -1,12 +1,12 @@
 # Copyright (c) 2020 Jarret Dyrbye
 # Distributed under the MIT software license, see the accompanying#  file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.protocol.nexus import ProtocolNexus
+from moneysocket.nexus.nexus import Nexus
 
 from moneysocket.message.request.invoice import RequestInvoice
 from moneysocket.message.request.pay import RequestPay
 
-class ConsumerTransactNexus(ProtocolNexus):
+class ConsumerTransactNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
         assert "notify_provider_cb" in dir(layer)
