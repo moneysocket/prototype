@@ -96,8 +96,8 @@ class StabledApp():
         self.connect_db = ConnectDb(config_dir)
         self.rate_db = RateDb(config_dir)
         self.rate_update = RateUpdate(self, self.rate_db)
-        self.consumer_stack = OutgoingConsumerStack(self)
-        self.provider_stack = BidirectionalProviderStack(config, self)
+        self.consumer_stack = self.setup_consumer_stack()
+        self.provider_stack = self.setup_provider_stack()
         self.asset_pool = StabledAssetPool()
 
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
@@ -108,6 +108,29 @@ class StabledApp():
 
         self.connect_loop = None
         self.prune_loop = None
+
+    ###########################################################################
+
+    def setup_consumer_stack(self):
+        s = OutgoingConsumerStack()
+        s.onannounce = self.consumer_on_announce
+        s.onrevoke = self.consumer_on_revoke
+        s.onstackevent = self.consumer_on_stack_event
+        s.onproviderinfo = self.consumer_on_provider_info
+        s.onping = self.consumer_on_ping
+        s.oninvoice = self.consumer_on_invoice
+        s.onpreimage = self.consumer_on_preimage
+        return s
+
+    def setup_provider_stack(self):
+        s = BidirectionalProviderStack(self.config)
+        s.onannounce = self.provider_on_announce
+        s.onrevoke = self.provider_on_revoke
+        s.onstackevent = self.provider_on_stack_event
+        s.handleproviderinforequest = self.provider_handle_provider_info_request
+        s.handleinvoicerequest = self.provider_handle_invoice_request
+        s.handlepayrequest = self.provider_handle_pay_request
+        return s
 
     ###########################################################################
 
@@ -308,26 +331,26 @@ class StabledApp():
     ###########################################################################
 
 
-    def consumer_online_cb(self, nexus):
+    def consumer_on_announce(self, nexus):
         print("consumer online")
 
-    def consumer_offline_cb(self, nexus):
+    def consumer_on_revoke(self, nexus):
         print("consumer offline")
         self.asset_pool.forget_asset(nexus.uuid)
 
-    def consumer_report_provider_info_cb(self, nexus, provider_info):
+    def consumer_on_provider_info(self, nexus, provider_info):
         print("provider info: %s" % provider_info)
         self.asset_pool.add_asset(nexus.uuid, provider_info)
 
-    def consumer_report_ping_cb(self, nexus, msecs):
+    def consumer_on_ping(self, nexus, msecs):
         print("got ping: %s" % msecs)
         pass
 
-    def consumer_post_stack_event_cb(self, layer_name, nexus, status):
+    def consumer_on_stack_event(self, layer_name, nexus, status):
         print("consumer layer: %s  status: %s" % (layer_name, status))
         pass
 
-    def consumer_report_bolt11_cb(self, nexus, bolt11, request_reference_uuid):
+    def consumer_on_invoice(self, nexus, bolt11, request_reference_uuid):
         if request_reference_uuid not in self.invoice_requests:
             logging.error("got bolt11 not requested? %s" %
                           request_reference_uuid)
@@ -420,8 +443,7 @@ class StabledApp():
         self.provider_stack.notify_preimage(shared_seeds, preimage, rrid)
 
 
-    def consumer_report_preimage_cb(self, nexus, preimage,
-                                    request_reference_uuid):
+    def consumer_on_preimage(self, nexus, preimage, request_reference_uuid):
         self._handle_pending_preimage(nexus, preimage, request_reference_uuid)
         self._handle_paying_preimage(nexus, preimage, request_reference_uuid)
 
@@ -430,16 +452,16 @@ class StabledApp():
     # provider stack callbacks
     ###########################################################################
 
-    def provider_online_cb(self, nexus):
+    def provider_on_announce(self, nexus):
         print("provider online")
 
-    def provider_offline_cb(self, nexus):
+    def provider_on_revoke(self, nexus):
         print("provider offline")
 
-    def provider_post_stack_event_cb(self, layer_name, nexus, status):
+    def provider_on_stack_event(self, layer_name, nexus, status):
         print("provider layer: %s  status: %s" % (layer_name, status))
 
-    def get_provider_info(self, shared_seed):
+    def provider_handle_provider_info_request(self, shared_seed):
         print("app - get provider info: %s" % shared_seed)
         account = self.liabilities.lookup_by_seed(shared_seed)
         if not account:
@@ -447,7 +469,7 @@ class StabledApp():
             return {'ready': False}
         return account.get_provider_info()
 
-    def provider_requesting_invoice_cb(self, nexus, msats, request_uuid):
+    def provider_handle_invoice_request(self, nexus, msats, request_uuid):
 
         # determine liability account
         shared_seed = nexus.get_shared_seed()
@@ -471,7 +493,7 @@ class StabledApp():
             }
         return None
 
-    def provider_requesting_pay_cb(self, nexus, bolt11, request_uuid):
+    def provider_handle_pay_request(self, nexus, bolt11, request_uuid):
         msats = Bolt11.get_msats(bolt11)
         if not msats:
             return "no amount specified in bolt11"

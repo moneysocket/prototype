@@ -13,18 +13,19 @@ from moneysocket.nexus.local.local import LocalNexus
 
 
 class OutgoingLocalLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "OUTGOING_LOCAL")
+    def __init__(self):
+        super().__init__()
         self.incoming_local_layer = None
         self.outgoing_by_shared_seed = {}
         self.incoming_by_shared_seed = {}
 
-    def announce_nexus_from_below_cb(self, below_nexus):
+    def announce_nexus(self, below_nexus):
         local_nexus = LocalNexus(below_nexus, self)
         self._track_nexus(local_nexus, below_nexus)
         self._track_nexus_announced(local_nexus)
-        self.notify_app_of_status(local_nexus, "NEXUS_ANNOUNCED");
-        self.announce_nexus_above_cb(local_nexus)
+        self.send_layer_event(local_nexus, "NEXUS_ANNOUNCED");
+        if self.onannounce:
+            self.onannounce(local_nexus)
 
     ###########################################################################
 
@@ -43,9 +44,9 @@ class OutgoingLocalLayer(Layer):
         self.incoming_by_shared_seed[shared_seed] = incoming_nexus
         # announce the two nexusues up their two stacks
         # incoming rendezvous nexus will wait for REQUEST_RENDEZVOUS
-        self.incoming_local_layer.announce_nexus_from_below_cb(incoming_nexus)
+        self.incoming_local_layer.announce_nexus(incoming_nexus)
         # outgoing rendezvous nexus will send REQUEST_RENDEZVOUS
-        self.announce_nexus_from_below_cb(outgoing_nexus)
+        self.announce_nexus(outgoing_nexus)
 
     def disconnect(self, shared_seed):
 
@@ -54,5 +55,5 @@ class OutgoingLocalLayer(Layer):
 
         outgoing_nexus = self.outgoing_by_shared_seed.pop(shared_seed)
         incoming_nexus = self.incoming_by_shared_seed.pop(shared_seed)
-        self.incoming_local_layer.revoke_nexus_from_below_cb(incoming_nexus)
-        self.revoke_nexus_from_below_cb(outgoing_nexus)
+        self.incoming_local_layer.revoke_nexus(incoming_nexus)
+        self.revoke_nexus(outgoing_nexus)

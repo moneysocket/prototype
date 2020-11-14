@@ -18,20 +18,20 @@ class OutgoingLocalNexus(Nexus):
 
     ###########################################################################
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("outgoing local nexus got msg: %s" % msg)
-        super().recv_from_below_cb(below_nexus, msg)
+        super().on_message(below_nexus, msg)
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("outgoing local nexus got raw msg: %d" % len(msg_bytes))
 
         msg, err = MessageCodec.wire_decode(msg_bytes,
             shared_seed=self.shared_seed)
         if err:
             logging.error("could not decode msg: %s" % err)
-            super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+            super().on_bin_message(below_nexus, msg_bytes)
             return
-        super().recv_from_below_cb(below_nexus, msg)
+        super().on_message(below_nexus, msg)
 
 
     ###########################################################################
@@ -41,12 +41,12 @@ class OutgoingLocalNexus(Nexus):
             shared_seed=self.shared_seed)
         if is_encrypted:
             logging.info("sending encrypted: %s" % msg)
-            self.send_raw(msg_or_msg_bytes)
+            self.send_bin(msg_or_msg_bytes)
         else:
             self.below_nexus.send_from_outgoing(msg_or_msg_bytes)
 
-    def send_raw(self, msg_bytes):
-        self.below_nexus.send_raw_from_outgoing(msg_bytes)
+    def send_bin(self, msg_bytes):
+        self.below_nexus.send_bin_from_outgoing(msg_bytes)
 
     def initiate_close(self):
         self.below_nexus.initiate_close()
@@ -60,4 +60,4 @@ class OutgoingLocalNexus(Nexus):
     ###########################################################################
 
     def revoke_from_layer(self):
-        self.layer.revoke_nexus_from_below_cb(self)
+        self.layer.revoke_nexus(self)

@@ -17,31 +17,52 @@ from moneysocket.beacon.location.websocket import WebsocketLocation
 class IncomingStack(object):
     def __init__(self, config, outgoing_local_layer):
         self.config = config
-        self.outgoing_local_layer = outgoing_local_layer
 
-        self.relay_layer = RelayLayer(self, self)
-        self.incoming_rendezvous_layer = IncomingRendezvousLayer(
-            self, self.relay_layer)
-        self.incoming_websocket_layer = IncomingWebsocketLayer(
-            self, self.incoming_rendezvous_layer)
-        self.incoming_local_layer = IncomingLocalLayer(
-            self, self.incoming_rendezvous_layer)
-
-        self.relay_layer.set_rendezvous_layer(self.incoming_rendezvous_layer)
-
-        self.outgoing_local_layer.set_incoming_layer(self.incoming_local_layer)
+        self.local_layer = self.setup_local_layer(outgoing_local_layer)
+        self.websocket_layer = self.setup_websocket_layer()
+        self.rendezvous_layer = self.setup_rendezvous_layer(
+            self.websocket_layer, self.local_layer)
+        self.relay_layer = self.setup_relay_layer(self.rendezvous_layer)
 
     ###########################################################################
 
-    def announce_nexus_from_below_cb(self, relay_nexus):
+    def setup_relay_layer(self, rendezvous_layer):
+        l = RelayLayer()
+        l.register_above_layer(rendezvous_layer)
+        l.register_layer_event(self.send_stack_event, "RELAY")
+        l.set_rendezvous_layer(rendezvous_layer)
+        return l
+
+    def setup_rendezvous_layer(self, below_layer_1, below_layer_2):
+        l = IncomingRendezvousLayer()
+        l.register_above_layer(below_layer_1)
+        l.register_above_layer(below_layer_2)
+        l.register_layer_event(self.send_stack_event, "INCOMING_RENDEZVOUS")
+        return l
+
+    def setup_websocket_layer(self):
+        l = IncomingWebsocketLayer()
+        l.register_layer_event(self.send_stack_event, "INCOMING_WEBSOCKET")
+        return l
+
+    def setup_local_layer(self, outgoing_local_layer):
+        l = IncomingLocalLayer()
+        l.register_layer_event(self.send_stack_event, "INCOMING_LOCAL")
+        outgoing_local_layer.set_incoming_layer(l)
+        return l
+
+
+    ###########################################################################
+
+    def announce_nexus(self, relay_nexus):
         # TODO - register for messages and log errors if we get any not handled
         # by the stack?
         logging.debug("announced from below")
 
-    def revoke_nexus_from_below_cb(self, relay_nexus):
+    def revoke_nexus(self, relay_nexus):
         logging.debug("revoked from below")
 
-    def post_layer_stack_event_cb(self, layer_name, nexus, status):
+    def send_stack_event(self, layer_name, nexus, status):
         pass
 
     ###########################################################################
@@ -83,4 +104,4 @@ class IncomingStack(object):
     def listen(self):
         listen_url = self.get_listen_url()
         tls_info = self.get_tls_info()
-        self.incoming_websocket_layer.listen(listen_url, tls_info=tls_info)
+        self.websocket_layer.listen(listen_url, tls_info=tls_info)

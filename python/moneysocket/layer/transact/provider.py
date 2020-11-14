@@ -7,38 +7,48 @@ from moneysocket.nexus.transact.provider import ProviderTransactNexus
 
 
 class ProviderTransactLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "PROVIDER_TRANSACT")
-        assert "got_request_pay_cb" in dir(stack)
-        assert "got_request_invoice_cb" in dir(stack)
+    def __init__(self):
+        super().__init__()
+        self.handleinvoicerequest = None
+        self.handlepayrequest = None
+        self.handleproviderinforequest = None
         self.nexuses_by_shared_seed = {}
 
-    def announce_nexus_from_below_cb(self, below_nexus):
-        provider_transact_nexus = ProviderTransactNexus(below_nexus, self)
+    def announce_nexus(self, below_nexus):
+        provider_transact_nexus = self.setup_transact_nexus(below_nexus)
         self._track_nexus(provider_transact_nexus, below_nexus)
         self._track_nexus_announced(provider_transact_nexus)
-        self.announce_nexus_above_cb(provider_transact_nexus)
+        if self.onannounce:
+            self.onannounce(provider_transact_nexus)
         shared_seed = provider_transact_nexus.get_shared_seed()
         if shared_seed not in self.nexuses_by_shared_seed:
             self.nexuses_by_shared_seed[shared_seed] = set()
         self.nexuses_by_shared_seed[shared_seed].add(
             provider_transact_nexus.uuid)
 
-    def revoke_nexus_from_below_cb(self, below_nexus):
+    def setup_transact_nexus(self, below_nexus):
+        n = ProviderTransactNexus(below_nexus, self)
+        n.handleinvoicerequest = self.handle_invoice_request
+        n.handlepayrequest = self.handle_pay_request
+        return n
+
+    def revoke_nexus(self, below_nexus):
         provider_transact_nexus = self.nexuses[
             self.nexus_by_below[below_nexus.uuid]]
-        super().revoke_nexus_from_below_cb(below_nexus)
+        super().revoke_nexus(below_nexus)
         shared_seed = provider_transact_nexus.get_shared_seed()
         self.nexuses_by_shared_seed[shared_seed].remove(
             provider_transact_nexus.uuid)
 
-    def request_invoice_cb(self, provider_transact_nexus, msats, request_uuid):
-        self.stack.got_request_invoice_cb(provider_transact_nexus, msats,
-                                          request_uuid)
+    def handle_invoice_request(self, provider_transact_nexus, msats,
+                               request_uuid):
+        assert self.handleinvoicerequest
+        self.handleinvoicerequest(provider_transact_nexus, msats, request_uuid)
 
-    def request_pay_cb(self, provider_transact_nexus, preimage, request_uuid):
-        self.stack.got_request_pay_cb(provider_transact_nexus, preimage,
-                                      request_uuid)
+    def handle_pay_request(self, provider_transact_nexus, preimage,
+                           request_uuid):
+        assert self.handlepayrequest
+        self.handlepayrequest(provider_transact_nexus, preimage, request_uuid)
 
     def fulfil_request_invoice(self, nexus_uuid, bolt11,
                                request_reference_uuid):

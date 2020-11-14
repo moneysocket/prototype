@@ -12,10 +12,10 @@ class WebsocketNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("websocket nexus got msg")
-        super().recv_from_below_cb(below_nexus, msg)
+        super().on_message(below_nexus, msg)
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("websocket nexus got raw msg")
-        super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+        super().on_bin_message(below_nexus, msg_bytes)

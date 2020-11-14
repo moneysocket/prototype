@@ -15,8 +15,8 @@ class IncomingSocket(WebSocketServerProtocol):
         super().__init__()
         self.uuid = uuid.uuid4()
 
-        self.upward_recv_cb = None
-        self.upward_recv_raw_cb = None
+        self.onmessage = None
+        self.onbinmessage = None
 
         self.was_announced = False
 
@@ -29,7 +29,7 @@ class IncomingSocket(WebSocketServerProtocol):
     def onOpen(self):
         logging.info("WebSocket connection open.")
 
-        self.factory.ms_protocol_layer.announce_nexus_from_below_cb(self)
+        self.factory.ms_protocol_layer.announce_nexus(self)
         self.was_announced = True
 
     def onMessage(self, payload, isBinary):
@@ -39,7 +39,8 @@ class IncomingSocket(WebSocketServerProtocol):
             shared_seed = self.factory.ms_shared_seed
 
             if not shared_seed and MessageCodec.is_cyphertext(payload):
-                self.upward_recv_raw_cb(self, payload)
+                if self.onbinmessage:
+                    self.onbinmessage(self, payload)
                 return
             msg, err = MessageCodec.wire_decode(payload,
                 shared_seed=shared_seed)
@@ -47,7 +48,8 @@ class IncomingSocket(WebSocketServerProtocol):
                 logging.error("could not decode: %s" % err)
                 return
             logging.info("recv msg: %s" % msg)
-            self.upward_recv_cb(self, msg)
+            if self.onmessage:
+                self.onmessage(self, msg)
         else:
             logging.info("text payload: %s" % payload.decode("utf8"))
             logging.error("text payload is unexpected, dropping")
@@ -55,7 +57,7 @@ class IncomingSocket(WebSocketServerProtocol):
     def onClose(self, wasClean, code, reason):
         logging.info("WebSocket connection closed: {0}".format(reason))
         if self.was_announced:
-            self.factory.ms_protocol_layer.revoke_nexus_from_below_cb(self)
+            self.factory.ms_protocol_layer.revoke_nexus(self)
 
     ##########################################################################
 
@@ -73,26 +75,15 @@ class IncomingSocket(WebSocketServerProtocol):
 
     ##########################################################################
 
-    # protocol layer will assign a parent nexus and it will register for
-    # message and close notifications
-
-    def register_upward_recv_cb(self, upward_recv_cb):
-        self.upward_recv_cb = upward_recv_cb
-
-    def register_upward_recv_raw_cb(self, upward_recv_raw_cb):
-        self.upward_recv_raw_cb = upward_recv_raw_cb
-
-    ##########################################################################
-
     # Act like a nexus, but interface to WebSocket goo underneath
 
     def send(self, msg):
         logging.info("encoding msg: %s" % msg)
         shared_seed = self.factory.ms_shared_seed
         msg_bytes = MessageCodec.wire_encode(msg, shared_seed=shared_seed)
-        self.send_raw(msg_bytes)
+        self.send_bin(msg_bytes)
 
-    def send_raw(self, msg_bytes):
+    def send_bin(self, msg_bytes):
         s = self.sendMessage(msg_bytes, isBinary=True)
         logging.info("sent message %d bytes, got: %s" % (len(msg_bytes), s))
 

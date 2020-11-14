@@ -7,12 +7,12 @@ from moneysocket.layer.layer import Layer
 
 
 class ProviderLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "PROVIDER")
-        assert "get_provider_info" in dir(stack)
+    def __init__(self):
+        super().__init__()
+        self.handleproviderinforequest = None
         self.waiting_for_app = {}
 
-    def announce_nexus_from_below_cb(self, below_nexus):
+    def announce_nexus(self, below_nexus):
         provider_nexus = ProviderNexus(below_nexus, self)
         self._track_nexus(provider_nexus, below_nexus)
         # consumer initiates the handshake, wait for it
@@ -20,12 +20,12 @@ class ProviderLayer(Layer):
 
     def provider_finished_cb(self, provider_nexus):
         self._track_nexus_announced(provider_nexus)
-        self.notify_app_of_status(provider_nexus, "NEXUS_ANNOUNCED");
-        self.announce_nexus_above_cb(provider_nexus)
+        self.send_layer_event(provider_nexus, "NEXUS_ANNOUNCED");
+        self.onannounce(provider_nexus)
 
-    def revoke_nexus_from_below_cb(self, below_nexus):
+    def revoke_nexus(self, below_nexus):
         provider_nexus = self.nexuses[self.nexus_by_below[below_nexus.uuid]]
-        super().revoke_nexus_from_below_cb(below_nexus)
+        super().revoke_nexus(below_nexus)
         shared_seed = provider_nexus.get_shared_seed()
         _ = self.waiting_for_app.pop(shared_seed, None)
 

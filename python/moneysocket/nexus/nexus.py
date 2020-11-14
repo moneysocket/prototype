@@ -10,13 +10,13 @@ class Nexus(object):
         self.uuid = uuid.uuid4()
         self.below_nexus = below_nexus
         self.layer = layer
+        self.onmessage = None
+        self.onbinmessage = None
+        self.register_above_nexus(below_nexus)
 
-        self.upward_recv_cb = None
-        self.upward_recv_raw_cb = None
-
-        self.below_nexus.register_upward_recv_cb(self.recv_from_below_cb)
-        self.below_nexus.register_upward_recv_raw_cb(
-            self.recv_raw_from_below_cb)
+    def register_above_nexus(self, below_nexus):
+        below_nexus.onmessage = self.on_message
+        below_nexus.onbinmessage = self.on_bin_message
 
     ###########################################################################
 
@@ -36,29 +36,23 @@ class Nexus(object):
     def send(self, msg):
         self.below_nexus.send(msg)
 
-    def send_raw(self, msg_bytes):
-        self.below_nexus.send_raw(msg_bytes)
+    def send_bin(self, msg_bytes):
+        self.below_nexus.send_bin(msg_bytes)
 
     def initiate_close(self):
         self.below_nexus.initiate_close()
 
     ###########################################################################
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         assert below_nexus.uuid == self.below_nexus.uuid, "crossed nexus?"
-        self.upward_recv_cb(self, msg)
+        if self.onmessage:
+            self.onmessage(self, msg)
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         assert below_nexus.uuid == self.below_nexus.uuid, "crossed nexus?"
-        self.upward_recv_raw_cb(self, msg_bytes)
-
-    ###########################################################################
-
-    def register_upward_recv_cb(self, upward_recv_cb):
-        self.upward_recv_cb = upward_recv_cb
-
-    def register_upward_recv_raw_cb(self, upward_recv_raw_cb):
-        self.upward_recv_raw_cb = upward_recv_raw_cb
+        if self.onbinmessage:
+            self.onbinmessage(self, msg_bytes)
 
     ###########################################################################
 

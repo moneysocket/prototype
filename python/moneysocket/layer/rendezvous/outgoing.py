@@ -7,10 +7,10 @@ from moneysocket.layer.layer import Layer
 
 
 class OutgoingRendezvousLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "OUTGOING_RENDEZVOUS")
+    def __init__(self):
+        super().__init__()
 
-    def announce_nexus_from_below_cb(self, below_nexus):
+    def announce_nexus(self, below_nexus):
         rendezvous_nexus = OutgoingRendezvousNexus(below_nexus, self)
         self._track_nexus(rendezvous_nexus, below_nexus)
 
@@ -20,5 +20,6 @@ class OutgoingRendezvousLayer(Layer):
 
     def rendezvous_finished_cb(self, rendezvous_nexus):
         self._track_nexus_announced(rendezvous_nexus)
-        self.notify_app_of_status(rendezvous_nexus, "NEXUS_ANNOUNCED")
-        self.announce_nexus_above_cb(rendezvous_nexus)
+        self.send_layer_event(rendezvous_nexus, "NEXUS_ANNOUNCED")
+        if self.onannounce:
+            self.onannounce(rendezvous_nexus)

@@ -6,28 +6,43 @@ from moneysocket.nexus.transact.consumer import ConsumerTransactNexus
 
 
 class ConsumerTransactLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "CONSUMER_TRANSACT")
-        assert "notify_preimage_cb" in dir(stack)
-        assert "notify_invoice_cb" in dir(stack)
-        assert "notify_provider_cb" in dir(stack)
+    def __init__(self):
+        super().__init__()
+        self.oninvoice = None
+        self.onpreimage = None
+        self.onproviderinfo = None
 
-    def announce_nexus_from_below_cb(self, below_nexus):
-        consumer_transact_nexus = ConsumerTransactNexus(below_nexus, self)
+    def announce_nexus(self, below_nexus):
+        consumer_transact_nexus = self.setup_consumer_transact_nexus(
+            below_nexus)
         self._track_nexus(consumer_transact_nexus, below_nexus)
         self._track_nexus_announced(consumer_transact_nexus)
-        self.notify_app_of_status(consumer_transact_nexus, "NEXUS_ANNOUNCED")
-        self.announce_nexus_above_cb(consumer_transact_nexus)
+        self.send_layer_event(consumer_transact_nexus, "NEXUS_ANNOUNCED")
+        if self.onannounce:
+            self.onannounce(consumer_transact_nexus)
 
-    def notify_invoice_cb(self, consumer_transact_nexus, bolt11,
-                          request_reference_uuid):
-        self.stack.notify_invoice_cb(consumer_transact_nexus, bolt11,
-                                     request_reference_uuid)
+    def setup_consumer_transact_nexus(self, below_nexus):
+        n = ConsumerTransactNexus(below_nexus, self)
+        n.oninvoice = self.on_invoice
+        n.onpreimage = self.on_preimage
+        n.onproviderinfo = self.on_provider_info
+        return n
 
-    def notify_preimage_cb(self, consumer_transact_nexus, preimage,
-                           request_reference_uuid):
-        self.stack.notify_preimage_cb(consumer_transact_nexus, preimage,
-                                      request_reference_uuid)
+    def on_invoice(self, consumer_transact_nexus, bolt11,
+                   request_reference_uuid):
+        if self.oninvoice:
+            self.oninvoice(consumer_transact_nexus, bolt11,
+                           request_reference_uuid)
+
+    def on_preimage(self, consumer_transact_nexus, preimage,
+                    request_reference_uuid):
+        if self.onpreimage:
+            self.onpreimage(consumer_transact_nexus, preimage,
+                            request_reference_uuid)
+
+    def on_provider_info(self, consumer_transact_nexus, msg):
+        if self.onproviderinfo:
+            self.onproviderinfo(consumer_transact_nexus, msg)
 
     def request_invoice(self, nexus_uuid, msats, description):
         if nexus_uuid not in self.nexuses:
@@ -42,6 +57,3 @@ class ConsumerTransactLayer(Layer):
         nexus = self.nexuses[nexus_uuid]
         request_uuid = nexus.request_pay(bolt11)
         return request_uuid, None
-
-    def notify_provider_cb(self, consumer_transact_nexus, msg):
-        self.stack.notify_provider_cb(consumer_transact_nexus, msg)

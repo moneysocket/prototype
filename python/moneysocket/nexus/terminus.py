@@ -15,6 +15,10 @@ class TerminusNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
 
+        self.handleinvoicerequest = None
+        self.handlepayrequest = None
+        self.handleproviderinforequest = None
+
     ###########################################################################
 
     def is_layer_message(self, msg):
@@ -22,28 +26,28 @@ class TerminusNexus(Nexus):
             return False
         return msg['request_name'] in {"REQUEST_PAY", "REQUEST_INVOICE"}
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("terminus nexus got msg")
 
         if not self.is_layer_message(msg):
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
             return
 
         request_reference_uuid = msg['request_uuid']
         shared_seed = below_nexus.get_shared_seed()
         if msg['request_name'] == "REQUEST_PAY":
-            self.layer.stack.terminus_request_pay(shared_seed, msg['bolt11'])
+            self.handlepayrequest(shared_seed, msg['bolt11'])
         else:
             msg['request_name'] == "REQUEST_INVOICE"
-            invoice_info = self.layer.stack.terminus_request_invoice(
-                shared_seed, msg['msats'])
+            assert self.handleinvoicerequest
+            invoice_info = self.handleinvoicerequest(shared_seed, msg['msats'])
             m = NotifyInvoice(invoice_info['bolt11'],
                               request_reference_uuid=request_reference_uuid)
             self.send(m)
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("terminus nexus got raw msg")
-        super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+        super().on_bin_message(below_nexus, msg_bytes)
 
 
     def notify_preimage(self, preimage, request_reference_uuid=None):
@@ -52,7 +56,8 @@ class TerminusNexus(Nexus):
         self.send(m)
 
     def notify_provider_info(self, shared_seed):
-        pi = self.layer.stack.get_provider_info(shared_seed)
+        assert self.handleproviderinforequest
+        pi = self.handleproviderinforequest(shared_seed);
         m = NotifyProvider(pi['account_uuid'], payer=pi['payer'],
                            payee=pi['payee'], wad=pi['wad'])
         self.send(m)

@@ -6,8 +6,8 @@ import logging
 from moneysocket.layer.layer import Layer
 
 class RelayLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "RELAY")
+    def __init__(self):
+        super().__init__()
         self.rendezvous_layer = None
 
     def set_rendezvous_layer(self, rendezvous_layer):
@@ -15,21 +15,20 @@ class RelayLayer(Layer):
 
     ###########################################################################
 
-    def announce_nexus_from_below_cb(self, rendezvous_nexus):
+    def announce_nexus(self, rendezvous_nexus):
         logging.info("announced from below")
-        rendezvous_nexus.register_upward_recv_cb(self.recv_from_below_cb)
-        rendezvous_nexus.register_upward_recv_raw_cb(
-            self.recv_raw_from_below_cb)
+        rendezvous_nexus.onmessage = self.on_message
+        rendezvous_nexus.onbinmessage = self.on_bin_message
 
-    def revoke_nexus_from_below_cb(self, rendezvous_nexus):
+    def revoke_nexus(self, rendezvous_nexus):
         logging.info("revoked from below")
 
     ###########################################################################
 
-    def recv_from_below_cb(self, rendezvous_nexus, msg):
+    def on_message(self, rendezvous_nexus, msg):
         peer_nexus = self.rendezvous_layer.get_peer_nexus(rendezvous_nexus)
         peer_nexus.send(msg)
 
-    def recv_raw_from_below_cb(self, rendezvous_nexus, msg_bytes):
+    def on_bin_message(self, rendezvous_nexus, msg_bytes):
         peer_nexus = self.rendezvous_layer.get_peer_nexus(rendezvous_nexus)
-        peer_nexus.send_raw(msg_bytes)
+        peer_nexus.send_bin(msg_bytes)

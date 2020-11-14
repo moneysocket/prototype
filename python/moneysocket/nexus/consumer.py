@@ -17,7 +17,7 @@ from moneysocket.message.request.ping import RequestPing
 class ConsumerNexus(Nexus):
     def __init__(self, below_nexus, layer):
         super().__init__(below_nexus, layer)
-        assert "notify_ping_cb" in dir(layer)
+        self.onping = None
         self.consumer_finished_cb = None;
         self.handshake_finished = False;
         self.ping_interval = None;
@@ -33,11 +33,11 @@ class ConsumerNexus(Nexus):
                                             "NOTIFY_PROVIDER_NOT_READY",
                                             "NOTIFY_PING"}
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("consumer nexus got msg")
 
         if not self.is_layer_message(msg):
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
             return
 
         if msg['notification_name'] == "NOTIFY_PROVIDER":
@@ -48,19 +48,20 @@ class ConsumerNexus(Nexus):
                 # layer instead. Refactor might be needed.
                 self.consumer_finished_cb(self)
             # pass the message above for the transact layer to process
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
         elif msg['notification_name'] == "NOTIFY_PROVIDER_NOT_READY":
             logging.info("provider not ready, waiting")
         elif msg['notification_name'] == "NOTIFY_PONG":
             if not self.ping_start_time:
                 return
             msecs = (time.time() - self.ping_start_time) * 1000;
-            self.layer.notify_ping_cb(self, round(msecs))
+            if self.onping:
+                self.onping(self, round(msecs))
             self.ping_start_time = None;
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("provider nexus got raw msg")
-        super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+        super().on_bin_message(below_nexus, msg_bytes)
 
     ###########################################################################
 

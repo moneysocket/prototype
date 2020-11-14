@@ -23,11 +23,11 @@ class OutgoingRendezvousNexus(Nexus):
                                             "NOTIFY_RENDEZVOUS_NOT_READY",
                                             "NOTIFY_RENDEZVOUS_END"}
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("outgoing rdv nexus got msg: %s" % msg)
         if not self.is_layer_message(msg):
             # pass on to above
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
             return
 
         if msg['notification_name'] == "NOTIFY_RENDEZVOUS":
@@ -39,7 +39,7 @@ class OutgoingRendezvousNexus(Nexus):
             logging.info("rendezvous ended")
             self.initiate_close()
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("rdv nexus got raw msg")
 
 

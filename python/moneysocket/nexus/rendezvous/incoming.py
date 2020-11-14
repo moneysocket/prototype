@@ -27,11 +27,11 @@ class IncomingRendezvousNexus(Nexus):
             return False
         return msg['request_name'] in {"REQUEST_RENDEZVOUS"}
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("rdv nexus got msg")
         if not self.is_layer_message(msg):
             # pass on to above
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
             return
 
         assert msg['request_name'] == "REQUEST_RENDEZVOUS"
@@ -55,9 +55,9 @@ class IncomingRendezvousNexus(Nexus):
             self.send(n)
 
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("rdv nexus got raw msg")
-        super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+        super().on_bin_message(below_nexus, msg_bytes)
 
 
     ###########################################################################

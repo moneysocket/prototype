@@ -65,18 +65,18 @@ class JoinedLocalNexus(object):
 
     def send_from_incoming(self, msg):
         logging.debug("from incoming: %s" % msg)
-        self.outgoing_upward_recv_cb(self, msg)
+        self.outgoing_nexus.on_message(self, msg)
 
-    def send_raw_from_incoming(self, msg_bytes):
+    def send_bin_from_incoming(self, msg_bytes):
         logging.debug("raw from incoming: %s" % len(msg_bytes))
-        self.outgoing_upward_recv_raw_cb(self, msg_bytes)
+        self.outgoing_nexus.on_bin_message(self, msg_bytes)
 
     ###########################################################################
 
     def send_from_outgoing(self, msg):
         logging.debug("from outgoing: %s" % msg)
-        self.incoming_upward_recv_cb(self, msg)
+        self.incoming_nexus.on_message(self, msg)
 
-    def send_raw_from_outgoing(self, msg_bytes):
+    def send_bin_from_outgoing(self, msg_bytes):
         logging.debug("raw from outgoing: %s" % len(msg_bytes))
-        self.incoming_upward_recv_raw_cb(self, msg_bytes)
+        self.incoming_nexus.on_bin_message(self, msg_bytes)

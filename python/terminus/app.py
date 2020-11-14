@@ -35,7 +35,7 @@ class TerminusApp(object):
         AccountDb.PERSIST_DIR = self.config['App']['AccountPersistDir']
 
         self.directory = TerminusDirectory()
-        self.terminus_stack = TerminusStack(self.config, self)
+        self.terminus_stack = self.setup_terminus_stack()
 
         TerminusRpc.APP = self
 
@@ -44,27 +44,39 @@ class TerminusApp(object):
 
     ###########################################################################
 
-    def announce_nexus_from_below_cb(self, terminus_nexus):
+    def setup_terminus_stack(self):
+        s = TerminusStack(self.config)
+        s.onannounce = self.on_announce
+        s.onrevoke = self.on_revoke
+        s.onstackevent = self.on_stack_event
+        s.handleproviderinforequest = self.handle_provider_info_request
+        s.handleinvoicerequest = self.terminus_handle_invoice_request
+        s.handlepayrequest = self.terminus_handle_pay_request
+        return s
+
+    ###########################################################################
+
+    def on_announce(self, terminus_nexus):
         # TODO - register for messages and log errors if we get any not handled
         # by the stack?
         pass
 
-    def revoke_nexus_from_below_cb(self, terminus_nexus):
+    def on_revoke(self, terminus_nexus):
         pass
 
-    def post_layer_stack_event_cb(self, layer_name, nexus, status):
+    def on_stack_event(self, layer_name, nexus, status):
         pass
 
     ###########################################################################
 
-    def get_provider_info(self, shared_seed):
+    def handle_provider_info_request(self, shared_seed):
         account = self.directory.lookup_by_seed(shared_seed)
         assert account is not None, "shared seed not from known account?"
         return account.get_provider_info()
 
     ###########################################################################
 
-    def terminus_request_pay(self, shared_seed, bolt11):
+    def terminus_handle_pay_request(self, shared_seed, bolt11):
         # TODO - this should be a request-> callback to allow for an
         # asynchronous call to the daemon.
 
@@ -87,7 +99,7 @@ class TerminusApp(object):
         # TODO pay preimage
         self.terminus_stack.notify_preimage(shared_seeds, preimage)
 
-    def terminus_request_invoice(self, shared_seed, msats):
+    def terminus_handle_invoice_request(self, shared_seed, msats):
         # TODO - this should be a request-> callback to allow for an
         # asynchronous call to the daemon.
 

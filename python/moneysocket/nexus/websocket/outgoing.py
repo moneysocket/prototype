@@ -17,8 +17,8 @@ class OutgoingSocket(WebSocketClientProtocol):
         super().__init__()
         self.uuid = uuid.uuid4()
 
-        self.upward_recv_cb = None
-        self.upward_recv_raw_cb = None
+        self.onmessage = None
+        self.onbinmessage = None
 
         self.was_announced = False
 
@@ -32,7 +32,7 @@ class OutgoingSocket(WebSocketClientProtocol):
         logging.info("WebSocket connection open.")
 
         # announce self as nexus to the protocol layer
-        self.factory.ms_protocol_layer.announce_nexus_from_below_cb(self)
+        self.factory.ms_protocol_layer.announce_nexus(self)
         self.was_announced = True
 
     def onMessage(self, payload, isBinary):
@@ -46,7 +46,8 @@ class OutgoingSocket(WebSocketClientProtocol):
                 logging.error("could not decode: %s" % err)
                 return
             logging.info("recv msg: %s" % msg)
-            self.upward_recv_cb(self, msg)
+            if self.onmessage:
+                self.onmessage(self, msg)
         else:
             logging.info("text payload: %s" % payload.decode("utf8"))
             logging.error("text payload is unexpected, dropping")
@@ -55,7 +56,7 @@ class OutgoingSocket(WebSocketClientProtocol):
         logging.info("connection closed %s %s %s" % (wasClean, code, reason))
 
         if self.was_announced:
-            self.factory.ms_protocol_layer.revoke_nexus_from_below_cb(self)
+            self.factory.ms_protocol_layer.revoke_nexus(self)
 
     ##########################################################################
 
@@ -73,27 +74,15 @@ class OutgoingSocket(WebSocketClientProtocol):
 
     ##########################################################################
 
-    # protocol layer will assign a parent nexus and it will register for
-    # message and close notifications
-
-    def register_upward_recv_cb(self, upward_recv_cb):
-        self.upward_recv_cb = upward_recv_cb
-
-    def register_upward_recv_raw_cb(self, upward_recv_raw_cb):
-        self.upward_recv_raw_cb = upward_recv_raw_cb
-
-
-    ##########################################################################
-
     # Act like a nexus, but interface to WebSocket goo underneath
 
     def send(self, msg):
         logging.info("encoding msg: %s" % msg)
         shared_seed = self.factory.ms_shared_seed
         msg_bytes = MessageCodec.wire_encode(msg, shared_seed=shared_seed)
-        self.send_raw(msg_bytes)
+        self.send_bin(msg_bytes)
 
-    def send_raw(self, msg_bytes):
+    def send_bin(self, msg_bytes):
         s = self.sendMessage(msg_bytes, isBinary=True)
         logging.info("sent message %d bytes, got: %s" % (len(msg_bytes), s))
 

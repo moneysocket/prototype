@@ -24,17 +24,18 @@ class ProviderNexus(Nexus):
             return False
         return msg['request_name'] in {"REQUEST_PROVIDER", "REQUEST_PING"}
 
-    def recv_from_below_cb(self, below_nexus, msg):
+    def on_message(self, below_nexus, msg):
         logging.info("provider nexus got msg")
 
         if not self.is_layer_message(msg):
-            super().recv_from_below_cb(below_nexus, msg)
+            super().on_message(below_nexus, msg)
             return
 
         self.request_reference_uuid = msg['request_uuid']
         if msg['request_name'] == "REQUEST_PROVIDER":
             shared_seed = below_nexus.get_shared_seed()
-            provider_info = self.layer.stack.get_provider_info(shared_seed)
+            assert self.layer.handleproviderinforequest
+            provider_info = self.layer.handleproviderinforequest(shared_seed)
             if provider_info['ready']:
                 self.notify_provider_ready()
             else:
@@ -44,9 +45,9 @@ class ProviderNexus(Nexus):
             assert msg['request_name'] == "REQUEST_PING"
             self.notify_pong()
 
-    def recv_raw_from_below_cb(self, below_nexus, msg_bytes):
+    def on_bin_message(self, below_nexus, msg_bytes):
         logging.info("provider nexus got raw msg")
-        super().recv_raw_from_below_cb(below_nexus, msg_bytes)
+        super().on_bin_message(below_nexus, msg_bytes)
 
     ###########################################################################
 
@@ -58,7 +59,8 @@ class ProviderNexus(Nexus):
 
     def notify_provider_ready(self):
         shared_seed = self.below_nexus.get_shared_seed()
-        provider_info = self.layer.stack.get_provider_info(shared_seed)
+        assert self.layer.handleproviderinforequest
+        provider_info = self.layer.handleproviderinforequest(shared_seed)
         assert provider_info['ready']
         account_uuid = provider_info['account_uuid']
         payer = provider_info['payer']

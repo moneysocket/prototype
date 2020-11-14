@@ -7,25 +7,32 @@ from moneysocket.layer.layer import Layer
 
 
 class ConsumerLayer(Layer):
-    def __init__(self, stack, above_layer):
-        super().__init__(stack, above_layer, "CONSUMER")
-        assert "notify_ping_cb" in dir(stack)
+    def __init__(self):
+        super().__init__()
+        self.onping = None
         self.waiting_for_app = {}
 
-    def announce_nexus_from_below_cb(self, below_nexus):
-        consumer_nexus = ConsumerNexus(below_nexus, self)
+    def announce_nexus(self, below_nexus):
+        consumer_nexus = self.setup_consumer_nexus(below_nexus)
         self._track_nexus(consumer_nexus, below_nexus)
         consumer_nexus.start_handshake(self.consumer_finished_cb)
 
-    def revoke_nexus_from_below_cb(self, below_nexus):
+    def setup_consumer_nexus(self, below_nexus):
+        n = ConsumerNexus(below_nexus, self)
+        n.onping = self.on_ping
+        return n
+
+    def revoke_nexus(self, below_nexus):
         consumer_nexus = self.nexuses[self.nexus_by_below[below_nexus.uuid]]
-        super().revoke_nexus_from_below_cb(below_nexus)
+        super().revoke_nexus(below_nexus)
         consumer_nexus.stop_pinging()
 
     def consumer_finished_cb(self, consumer_nexus):
         self._track_nexus_announced(consumer_nexus)
-        self.notify_app_of_status(consumer_nexus, "NEXUS_ANNOUNCED")
-        self.announce_nexus_above_cb(consumer_nexus)
+        self.send_layer_event(consumer_nexus, "NEXUS_ANNOUNCED")
+        if self.onannounce:
+            self.onannounce(consumer_nexus)
 
-    def notify_ping_cb(self, consumer_nexus, msecs):
-        self.stack.notify_ping_cb(consumer_nexus, msecs)
+    def on_ping(self, consumer_nexus, msecs):
+        if self.onping:
+            self.onping(consumer_nexus, msecs)
