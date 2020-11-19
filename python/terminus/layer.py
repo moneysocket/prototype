@@ -2,9 +2,9 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.nexus.terminus import TerminusNexus
 from moneysocket.layer.layer import Layer
 
+from terminus.nexus import TerminusNexus
 
 class TerminusLayer(Layer):
     def __init__(self):
