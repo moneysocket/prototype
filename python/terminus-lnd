@@ -30,7 +30,7 @@ DEFAULT_WALLET_CONFIG = os.path.join(DEFAULT_LND_DIR,
 
 
 CONFIG_FILE_HELP = """ Configuration settings to app run instance with. """
-parser = argparse.ArgumentParser(prog="terminus-lnd-app.py")
+parser = argparse.ArgumentParser(prog="terminus-lnd")
 parser.add_argument('-c', '--config', type=str,
                     default=DEFAULT_WALLET_CONFIG,
                     help=CONFIG_FILE_HELP)
