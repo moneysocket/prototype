@@ -2,13 +2,14 @@
 # Distributed under the MIT software license, see the accompanying
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
-from moneysocket.layer.terminus import TerminusLayer
 from moneysocket.layer.provider import ProviderLayer
 from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
 from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
 from moneysocket.layer.local.outgoing import OutgoingLocalLayer
 
 from moneysocket.stack.incoming import IncomingStack
+
+from terminus.layer import TerminusLayer
 
 class TerminusStack(object):
     def __init__(self, config):
