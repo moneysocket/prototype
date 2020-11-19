@@ -3,57 +3,91 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 
-from moneysocket.protocol.transact.provider_layer import ProviderTransactLayer
-from moneysocket.protocol.provider.layer import ProviderLayer
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.local.outgoing_layer import OutgoingLocalLayer
+from moneysocket.layer.transact.provider import ProviderTransactLayer
+from moneysocket.layer.provider import ProviderLayer
+from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
+from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
+from moneysocket.layer.local.outgoing import OutgoingLocalLayer
 
 from moneysocket.stack.incoming import IncomingStack
 
 class BidirectionalProviderStack(object):
-    def __init__(self, config, app):
+    def __init__(self, config):
         self.config = config
-        self.app = app
 
-        assert "get_provider_info" in dir(app)
-        assert "provider_post_stack_event_cb" in dir(app)
-        assert "provider_online_cb" in dir(app)
-        assert "provider_offline_cb" in dir(app)
-        assert "provider_requesting_invoice_cb" in dir(app)
-        assert "provider_requesting_pay_cb" in dir(app)
+        self.onannounce = None
+        self.onrevoke = None
+        self.onstackevent = None
+        self.handleproviderinforequest = None
+        self.handleinvoicerequest = None
+        self.handlepayrequest = None
 
-        self.transact_layer = ProviderTransactLayer(self, self)
-        self.provider_layer = ProviderLayer(self, self.transact_layer)
-        self.rendezvous_layer = OutgoingRendezvousLayer(
-            self, self.provider_layer)
-
-        self.outgoing_websocket_layer = OutgoingWebsocketLayer(
-            self, self.rendezvous_layer)
-        self.local_layer = OutgoingLocalLayer(self, self.rendezvous_layer)
-        self.incoming_stack = IncomingStack(self.config, self.local_layer)
-
+        self.local_layer = self.setup_local_layer()
+        self.websocket_layer = self.setup_websocket_layer()
+        self.rendezvous_layer = self.setup_rendezvous_layer(
+            self.websocket_layer, self.local_layer)
+        self.provider_layer = self.setup_provider_layer(self.rendezvous_layer)
+        self.transact_layer = self.setup_transact_layer(self.provider_layer)
+        self.incoming_stack = self.setup_incoming_stack(self.config,
+                                                        self.local_layer)
 
     ###########################################################################
 
-    def got_request_invoice_cb(self, nexus, msats, request_uuid):
-        err = self.app.provider_requesting_invoice_cb(nexus, msats,
-                                                      request_uuid)
+    def setup_transact_layer(self, below_layer):
+        l = ProviderTransactLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.send_stack_event, "PROVIDER_TRANSACT")
+        l.handleinvoicerequest = self.handle_invoice_request
+        l.handlepayrequest = self.handle_pay_request
+        l.handleproviderinforequest = self.handle_provider_info_request
+        return l
+
+    def setup_provider_layer(self, below_layer):
+        l = ProviderLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.send_stack_event, "PROVIDER")
+        l.handleproviderinforequest = self.handle_provider_info_request
+        return l
+
+    def setup_rendezvous_layer(self, below_layer_1, below_layer_2):
+        l = OutgoingRendezvousLayer()
+        l.register_above_layer(below_layer_1)
+        l.register_above_layer(below_layer_2)
+        l.register_layer_event(self.send_stack_event, "OUTGOING_RENDEZVOUS")
+        return l
+
+    def setup_websocket_layer(self):
+        l = OutgoingWebsocketLayer()
+        l.register_layer_event(self.send_stack_event, "OUTGOING_WEBSOCKET")
+        return l
+
+    def setup_local_layer(self):
+        l = OutgoingLocalLayer()
+        l.register_layer_event(self.send_stack_event, "OUTGOING_LOCAL")
+        return l
+
+    def setup_incoming_stack(self, config, local_layer):
+        s = IncomingStack(config, local_layer)
+        return s
+
+    ###########################################################################
+
+    def handle_invoice_request(self, nexus, msats, request_uuid):
+        assert self.handleinvoicerequest
+        err = self.handleinvoicerequest(nexus, msats, request_uuid)
         if err:
             print("couldn't get invoice: %s" % err)
             # TODO - send back error
             return
-
 
     def fulfil_request_invoice_cb(self, nexus_uuid, bolt11,
                                   request_reference_uuid):
         self.transact_layer.fulfil_request_invoice(nexus_uuid, bolt11,
                                                    request_reference_uuid)
 
-    def got_request_pay_cb(self, nexus, bolt11, request_uuid):
-        err = self.app.provider_requesting_pay_cb(nexus, bolt11,
-                                                  request_uuid)
+    def handle_pay_request(self, nexus, bolt11, request_uuid):
+        assert self.handlepayrequest
+        err = self.handlepayrequest(nexus, bolt11, request_uuid)
         if err:
             print("couldn't get invoice: %s" % err)
             # TODO - send back error
@@ -68,19 +102,23 @@ class BidirectionalProviderStack(object):
 
     ###########################################################################
 
-    def announce_nexus_from_below_cb(self, transact_nexus):
-        self.app.provider_online_cb(transact_nexus)
+    def announce_nexus(self, transact_nexus):
+        if self.onannounce:
+            self.onannounce(transact_nexus)
 
-    def revoke_nexus_from_below_cb(self, transact_nexus):
-        self.app.provider_offline_cb(transact_nexus)
+    def revoke_nexus(self, transact_nexus):
+        if self.onrevoke:
+            self.onrevoke(transact_nexus)
 
-    def post_layer_stack_event_cb(self, layer_name, nexus, status):
-        self.app.provider_post_stack_event_cb(layer_name, nexus, status)
+    def send_stack_event(self, layer_name, nexus, status):
+        if self.onstackevent:
+            self.onstackevent(layer_name, nexus, status)
 
     ###########################################################################
 
-    def get_provider_info(self, shared_seed):
-        provider_info = self.app.get_provider_info(shared_seed)
+    def handle_provider_info_request(self, shared_seed):
+        assert self.handleproviderinforequest
+        provider_info = self.handleproviderinforequest(shared_seed)
         print("got: %s" % provider_info)
         return provider_info
 
@@ -90,12 +128,12 @@ class BidirectionalProviderStack(object):
     ###########################################################################
 
     def connect(self, location, shared_seed):
-        c = self.outgoing_websocket_layer.connect(location, shared_seed)
+        c = self.websocket_layer.connect(location, shared_seed)
         #print("connecting got: %s" % c)
         return c
 
     def disconnect(self, shared_seed):
-        self.outgoing_websocket_layer.disconnect(shared_seed)
+        self.websocket_layer.disconnect(shared_seed)
 
     ###########################################################################
 

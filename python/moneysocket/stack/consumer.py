@@ -3,63 +3,82 @@
 # file LICENSE or http://www.opensource.org/licenses/mit-license.php
 
 from moneysocket.beacon.location.websocket import WebsocketLocation
-from moneysocket.protocol.rendezvous.outgoing_layer import (
-    OutgoingRendezvousLayer)
-from moneysocket.protocol.websocket.outgoing_layer import OutgoingWebsocketLayer
-from moneysocket.protocol.consumer.layer import ConsumerLayer
-from moneysocket.protocol.transact.consumer_layer import ConsumerTransactLayer
+from moneysocket.layer.rendezvous.outgoing import OutgoingRendezvousLayer
+from moneysocket.layer.websocket.outgoing import OutgoingWebsocketLayer
+from moneysocket.layer.consumer import ConsumerLayer
+from moneysocket.layer.transact.consumer import ConsumerTransactLayer
 
 
 class ConsumerStack(object):
-    def __init__(self, app):
-        self.app = app
-        assert "consumer_online_cb" in dir(self.app)
-        assert "consumer_offline_cb" in dir(self.app)
-        assert "consumer_report_provider_info_cb" in dir(self.app)
-        assert "consumer_report_ping_cb" in dir(self.app)
-        assert "consumer_post_stack_event_cb" in dir(self.app)
-        assert "consumer_report_bolt11_cb" in dir(self.app)
-        assert "consumer_report_preimage_cb" in dir(self.app)
+    def __init__(self):
+        self.onannounce = None
+        self.onrevoke = None
+        self.onstackevent = None
+        self.onproviderinfo = None
+        self.onping = None
+        self.oninvoice = None
+        self.onpreimage = None
 
-        self.transact_layer = ConsumerTransactLayer(self, self)
-        self.consumer_layer = ConsumerLayer(self, self.transact_layer)
+        assert self.rendezvous_layer # setup in subclass
+        self.consumer_layer = self.setup_consumer_layer(self.rendezvous_layer)
+        self.transact_layer = self.setup_transact_layer(self.consumer_layer)
 
+    ###########################################################################
+
+    def setup_consumer_layer(self, below_layer):
+        l = ConsumerLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.send_stack_event, "CONSUMER")
+        l.onping = self.on_ping
+        return l
+
+    def setup_transact_layer(self, below_layer):
+        l = ConsumerTransactLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.send_stack_event, "CONSUMER_TRANSACT")
+        l.oninvoice = self.on_invoice
+        l.onpreimage = self.on_preimage
+        l.onproviderinfo = self.on_provider_info
+        return l
 
     ############# transact layer callbacks
 
-    def notify_invoice_cb(self, transact_nexus, bolt11, request_reference_uuid):
-        self.app.consumer_report_bolt11_cb(transact_nexus, bolt11,
-                                           request_reference_uuid)
+    def on_invoice(self, transact_nexus, bolt11, request_reference_uuid):
+        if self.oninvoice:
+            self.oninvoice(transact_nexus, bolt11, request_reference_uuid)
 
-    def notify_preimage_cb(self, transact_nexus, preimage,
-                           request_reference_uuid):
-        self.app.consumer_report_preimage_cb(transact_nexus, preimage,
-                                             request_reference_uuid)
+    def on_preimage(self, transact_nexus, preimage, request_reference_uuid):
+        if self.onpreimage:
+            self.onpreimage(transact_nexus, preimage, request_reference_uuid)
 
     ############# consumer layer callbacks
 
-    def notify_provider_cb(self, transact_nexus, msg):
+    def on_provider_info(self, transact_nexus, msg):
         provider_info = {'payer':         msg['payer'],
                          'payee':         msg['payee'],
                          'wad':           msg['wad'],
                          'account_uuid':  msg['account_uuid']}
-        self.app.consumer_report_provider_info_cb(transact_nexus, provider_info)
+        if self.onproviderinfo:
+            self.onproviderinfo(transact_nexus, provider_info)
 
-    def notify_ping_cb(self, transact_nexus, msecs):
-        self.app.consumer_report_ping_cb(msecs)
+    def on_ping(self, transact_nexus, msecs):
+        if self.onping:
+            self.onping(msecs)
 
     ######## layer callback
 
-    def announce_nexus_from_below_cb(self, below_nexus):
-        self.app.consumer_online_cb(below_nexus);
+    def on_announce(self, below_nexus):
+        if self.onannounce:
+            self.onannounce(below_nexus);
 
-    def revoke_nexus_from_below_cb(self, below_nexus):
-        self.app.consumer_offline_cb(below_nexus)
+    def on_revoke(self, below_nexus):
+        if self.onrevoke:
+            self.onrevoke(below_nexus)
 
 
-    def post_layer_stack_event_cb(self, layer_name, nexus, status):
-        self.app.consumer_post_stack_event_cb(layer_name, nexus, status)
-
+    def send_stack_event(self, layer_name, nexus, status):
+        if self.onstackevent:
+            self.onstackevent(layer_name, nexus, status)
 
     ######## UI calls these
 
@@ -80,12 +99,26 @@ class ConsumerStack(object):
 
 
 class OutgoingConsumerStack(ConsumerStack):
-    def __init__(self, app):
-        super().__init__(app)
-        self.rendezvous_layer = OutgoingRendezvousLayer(
-            self, self.consumer_layer)
-        self.websocket_layer = OutgoingWebsocketLayer(
-            self, self.rendezvous_layer)
+    def __init__(self):
+        self.websocket_layer = self.setup_websocket_layer()
+        self.rendezvous_layer = self.setup_rendezvous_layer(
+            self.websocket_layer)
+        super().__init__()
+
+    ###########################################################################
+
+    def setup_rendezvous_layer(self, below_layer):
+        l = OutgoingRendezvousLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.send_stack_event, "OUTGOING_RENDEZVOUS")
+        return l
+
+    def setup_websocket_layer(self):
+        l = OutgoingWebsocketLayer()
+        l.register_layer_event(self.send_stack_event, "OUTGOING_WEBSOCKET")
+        return l
+
+    ###########################################################################
 
     def do_connect(self, beacon):
         location = beacon.locations[0]

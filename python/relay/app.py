@@ -10,23 +10,21 @@ from OpenSSL import SSL
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-from moneysocket.protocol.websocket.incoming_layer import (
-    IncomingWebsocketLayer)
-from moneysocket.protocol.rendezvous.incoming_layer import (
-    IncomingRendezvousLayer)
-from moneysocket.protocol.relay.layer import RelayLayer
+from moneysocket.layer.websocket.incoming import IncomingWebsocketLayer
+from moneysocket.layer.rendezvous.incoming import IncomingRendezvousLayer
+from moneysocket.layer.relay import RelayLayer
 
 
 class Relay(object):
     def __init__(self, config):
         self.config = config
 
-        # TODO - this could/should be extracted into a Stack class
-        self.relay_layer = RelayLayer(self, self)
-        self.rendezvous_layer = IncomingRendezvousLayer(self, self.relay_layer)
-        self.websocket_layer = IncomingWebsocketLayer(self,
-                                                      self.rendezvous_layer)
-        self.relay_layer.set_rendezvous_layer(self.rendezvous_layer)
+        # TODO - this could/should be extracted into a Stack class, though
+        # the relay app is small and straightforward like this, so no rush.
+        self.websocket_layer = self.setup_websocket_layer()
+        self.rendezvous_layer = self.setup_rendezvous_layer(
+            self.websocket_layer)
+        self.relay_layer = self.setup_relay_layer(self.rendezvous_layer)
 
         self.listen_url = self.get_listen_url(self.config['Relay'])
         self.tls_info = self.get_tls_info(self.config['Relay'])
@@ -36,11 +34,28 @@ class Relay(object):
 
     ###########################################################################
 
-    def announce_nexus_from_below_cb(self, rendezvous_nexus):
-        logging.info("announced from below")
+    def setup_relay_layer(self, rendezvous_layer):
+        l = RelayLayer()
+        l.register_above_layer(rendezvous_layer)
+        l.register_layer_event(self.on_stack_event, "RELAY")
+        l.set_rendezvous_layer(rendezvous_layer)
+        return l
 
-    def revoke_nexus_from_below_cb(self, rendezvous_nexus):
-        logging.info("revoked from below")
+    def setup_rendezvous_layer(self, below_layer):
+        l = IncomingRendezvousLayer()
+        l.register_above_layer(below_layer)
+        l.register_layer_event(self.on_stack_event, "INCOMING_RENDEZVOUS")
+        return l
+
+    def setup_websocket_layer(self):
+        l = IncomingWebsocketLayer()
+        l.register_layer_event(self.on_stack_event, "INCOMING_WEBSOCKET")
+        return l
+
+    ###########################################################################
+
+    def on_stack_event(self, layer_name, nexus, status):
+        pass
 
     ###########################################################################
 

@@ -39,9 +39,4 @@ app.run()
 
 reactor.listenTCP(rpc_port, server.Site(StabledRpc()), interface=rpc_interface)
 
-# TODO - price feed collector
-
-# TODO - moneysocket consumers
-# TODO - moneysocket providers
-
 reactor.run()
