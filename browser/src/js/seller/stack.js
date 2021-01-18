@@ -159,7 +159,7 @@ class SellerStack {
         this.nexus = null;
         this.shared_seed = null;
         if (this.onrevoke != null) {
-            this.orevoke(below_nexus);
+            this.onrevoke(below_nexus);
         }
     }
 
